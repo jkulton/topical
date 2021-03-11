@@ -1,0 +1,83 @@
+{{define "join"}}
+<html>
+  <head>
+    <title>Tinyboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="shortcut icon" href="/static/favicon-light.ico" />
+  </head>
+  <body class="dark-mode">
+
+    <section class="header">
+      <a class="logo" href="/">
+        Tinyboard<svg class="feather feather-message-square sc-dnqmqq jxshSx" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-reactid="766"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      </a>
+    </section>
+
+
+    <form class="signup-form" method="post" action="/join">
+      <h4 class="signup-form-header">
+        Join the conversation.
+      </h4>
+
+      <section>
+        <label for="initials" class="signup-form-label">Two-character initials:</label>
+        <input placeholder="AA" class="mla" name="initials" type="text">
+      </section>
+
+      <section class="signup-form-color-section">
+        <label class="signup-form-label">
+          Favorite color:
+        </label>
+
+        <section>
+          <label class="color-1 black mla">
+            <input name="theme" value="1" type="radio">
+            <span></span>
+          </label>
+
+          <label class="color-2 gray">
+            <input name="theme" value="2" type="radio">
+            <span></span>
+          </label>
+
+          <label class="color-3 blue">
+            <input name="theme" value="3" type="radio" checked="">
+            <span></span>
+          </label>
+
+          <label class="color-4 purple">
+            <input name="theme" value="4" type="radio">
+            <span></span>
+          </label>
+
+          <label class="color-5 red">
+            <input name="theme" value="5" type="radio">
+            <span></span>
+          </label>
+
+          <label class="color-6 orange">
+            <input name="theme" value="6" type="radio">
+            <span></span>
+          </label>
+
+          <label class="color-7 green">
+            <input name="theme" value="7" type="radio">
+            <span></span>
+          </label>
+        </section>
+      </section>
+      <button type="submit">Join</button>
+    </form>
+
+    <section class="footer">
+      <a class="simple-link" href="/">
+        Tinyboard<svg class="feather feather-message-square sc-dnqmqq jxshSx" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-reactid="766"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      </a>
+    </section>
+  </body>
+</html>
+{{end}}
+
+
