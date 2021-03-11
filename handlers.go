@@ -20,8 +20,7 @@ type HandlerHelper struct {
 	session   *sessions.CookieStore
 }
 
-// UserFromSession retrieves a User from the CookieStore, if present
-func UserFromSession(s *sessions.CookieStore, r *http.Request) (*User, error) {
+func userFromSession(s *sessions.CookieStore, r *http.Request) (*User, error) {
 	session, _ := s.Get(r, "u")
 	val := session.Values["user"]
 	var u *User
@@ -54,7 +53,7 @@ func saveUserToSession(u *User, s *sessions.CookieStore, r *http.Request, w http
 // TopicList renders a list of recent topics with message counts in order of most recent post
 func TopicList(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, _ := UserFromSession(h.session, r)
+		user, _ := userFromSession(h.session, r)
 		topics, err := h.storage.GetRecentTopics()
 
 		if err != nil {
@@ -74,7 +73,7 @@ func TopicList(h *HandlerHelper) http.HandlerFunc {
 // TopicShow renders a topic with it's associated threaded messages
 func TopicShow(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, _ := UserFromSession(h.session, r)
+		user, _ := userFromSession(h.session, r)
 		vars := mux.Vars(r)
 		id, err := strconv.Atoi(vars["id"])
 
@@ -109,9 +108,10 @@ func TopicShow(h *HandlerHelper) http.HandlerFunc {
 // MessageCreate accepts a form POST, creating a message within a given Topic
 func MessageCreate(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, err := UserFromSession(h.session, r)
+		user, err := userFromSession(h.session, r)
 
 		if err != nil {
+			log.Print("User does not exist, redirecting home")
 			http.Redirect(w, r, "/topics", 302)
 			return
 		}
@@ -149,9 +149,15 @@ func MessageCreate(h *HandlerHelper) http.HandlerFunc {
 // TopicNew renders a form for creating a new topic
 func TopicNew(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, _ := UserFromSession(h.session, r)
-		payload := struct{ User *User }{User: user}
+		user, err := userFromSession(h.session, r)
 
+		if err != nil {
+			log.Print("User does not exist, redirecting home")
+			http.Redirect(w, r, "/topics", 302)
+			return
+		}
+
+		payload := struct{ User *User }{User: user}
 		h.templates.ExecuteTemplate(w, "new-topic", payload)
 	})
 }
@@ -159,9 +165,10 @@ func TopicNew(h *HandlerHelper) http.HandlerFunc {
 // TopicCreate creates a new topic based on inputs from client
 func TopicCreate(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, err := UserFromSession(h.session, r)
+		user, err := userFromSession(h.session, r)
 
 		if err != nil {
+			log.Print("User does not exist, redirecting home")
 			http.Redirect(w, r, "/topics", 302)
 			return
 		}
@@ -228,7 +235,7 @@ func SettingsUpdate(h HandlerHelper) http.HandlerFunc {
 // cookie in their local browser with user information.
 func JoinShow(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, _ := UserFromSession(h.session, r)
+		user, _ := userFromSession(h.session, r)
 
 		// Redirect to homepage if user exists
 		if user != nil {

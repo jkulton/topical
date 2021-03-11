@@ -8,8 +8,6 @@ Remaining TODOs:
 - settings PUT for dark/light mode (session data)
 - update to Postgres for Heroku deployment
 - UI redesign
-- get rid of ProtectedRouteMiddleware? we still do a second check in the handler anyhow
-	- only three routes are protected so seems safer to just do it manually for now
 
 DONE:
 
@@ -19,6 +17,8 @@ DONE:
 - make sure we have validation around user initials being two characters
 - break app into multiple files
 - create some logging Middleware?
+- get rid of ProtectedRouteMiddleware? we still do a second check in the handler anyhow
+	- only three routes are protected so seems safer to just do it manually for now
 
 **/
 
@@ -44,10 +44,6 @@ func main() {
 
 	// Routes
 	r := mux.NewRouter()
-
-	// Serve FE assets under `/static`
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
-
 	r.HandleFunc("/topics", TopicCreate(h)).Methods("POST").Name("TopicCreate")
 	r.HandleFunc("/topics/new", TopicNew(h)).Methods("GET").Name("TopicNew")
 	r.HandleFunc("/topics/{id}/messages", MessageCreate(h)).Methods("POST").Name("MessageCreate")
@@ -58,12 +54,11 @@ func main() {
 	r.HandleFunc("/topics/", TopicList(h)).Methods("GET")
 	r.HandleFunc("/topics/{id:[0-9]+}", TopicShow(h)).Methods("GET").Name("TopicShow")
 
+	// Serve FE assets under `/static`
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+
 	// Middleware Registration
 	r.Use(RequestLoggerMiddleware)
-
-	// Protected Routes are those which require a user be logged in.
-	protectedRoutes := []string{"TopicCreate", "TopicNew", "MessageCreate"}
-	r.Use(ProtectedRouteMiddleware(protectedRoutes, session))
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
