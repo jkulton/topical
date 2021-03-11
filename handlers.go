@@ -1,12 +1,11 @@
 package main
 
 import (
-	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"html/template"
 	"log"
 	"net/http"
@@ -14,32 +13,48 @@ import (
 	"strconv"
 )
 
-type ContextKey string
-
-const ContextUserKey ContextKey = "user"
-
 // HandlerHelper provides useful helpers to handler functions
 type HandlerHelper struct {
 	templates *template.Template
 	storage   *Storage
+	session   *sessions.CookieStore
 }
 
-func userFromContext(ctx context.Context) (*User, error) {
-	userValue := ctx.Value(ContextUserKey)
+// UserFromSession retrieves a User from the CookieStore, if present
+func UserFromSession(s *sessions.CookieStore, r *http.Request) (*User, error) {
+	session, _ := s.Get(r, "u")
+	val := session.Values["user"]
+	var u *User
 
-	if userValue == nil {
+	if val == nil {
 		return nil, errors.New("User not found")
 	}
 
-	user := userValue.(User)
+	json.Unmarshal([]byte(val.(string)), &u)
+	return u, nil
+}
 
-	return &user, nil
+func saveUserToSession(u *User, s *sessions.CookieStore, r *http.Request, w http.ResponseWriter) error {
+	session, _ := s.Get(r, "u")
+	j, err := json.Marshal(u)
+
+	if err != nil {
+		return errors.New("Unable to save user")
+	}
+
+	session.Values["user"] = string(j)
+
+	if err := session.Save(r, w); err != nil {
+		return errors.New("Unable to save user")
+	}
+
+	return nil
 }
 
 // TopicList renders a list of recent topics with message counts in order of most recent post
 func TopicList(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, _ := userFromContext(r.Context())
+		user, _ := UserFromSession(h.session, r)
 		topics, err := h.storage.GetRecentTopics()
 
 		if err != nil {
@@ -59,7 +74,7 @@ func TopicList(h *HandlerHelper) http.HandlerFunc {
 // TopicShow renders a topic with it's associated threaded messages
 func TopicShow(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, _ := userFromContext(r.Context())
+		user, _ := UserFromSession(h.session, r)
 		vars := mux.Vars(r)
 		id, err := strconv.Atoi(vars["id"])
 
@@ -94,7 +109,7 @@ func TopicShow(h *HandlerHelper) http.HandlerFunc {
 // MessageCreate accepts a form POST, creating a message within a given Topic
 func MessageCreate(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, err := userFromContext(r.Context())
+		user, err := UserFromSession(h.session, r)
 
 		if err != nil {
 			http.Redirect(w, r, "/topics", 302)
@@ -120,9 +135,7 @@ func MessageCreate(h *HandlerHelper) http.HandlerFunc {
 			AuthorInitials: authorInitials,
 		}
 
-		_, err = h.storage.CreateMessage(&message)
-
-		if err != nil {
+		if _, err := h.storage.CreateMessage(&message); err != nil {
 			log.Print("Error calling createMessage")
 			log.Panic(err)
 			// TODO: toast error?
@@ -136,7 +149,7 @@ func MessageCreate(h *HandlerHelper) http.HandlerFunc {
 // TopicNew renders a form for creating a new topic
 func TopicNew(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, _ := userFromContext(r.Context())
+		user, _ := UserFromSession(h.session, r)
 		payload := struct{ User *User }{User: user}
 
 		h.templates.ExecuteTemplate(w, "new-topic", payload)
@@ -146,7 +159,7 @@ func TopicNew(h *HandlerHelper) http.HandlerFunc {
 // TopicCreate creates a new topic based on inputs from client
 func TopicCreate(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, err := userFromContext(r.Context())
+		user, err := UserFromSession(h.session, r)
 
 		if err != nil {
 			http.Redirect(w, r, "/topics", 302)
@@ -155,9 +168,6 @@ func TopicCreate(h *HandlerHelper) http.HandlerFunc {
 
 		title := r.FormValue("title")
 		content := r.FormValue("content")
-		authorTheme := user.Theme
-		authorInitials := user.Initials
-
 		topic, err := h.storage.CreateTopic(title)
 
 		if err != nil {
@@ -165,13 +175,11 @@ func TopicCreate(h *HandlerHelper) http.HandlerFunc {
 			log.Panic(err)
 		}
 
-		id := topic.ID
-
 		message := Message{
-			TopicID:        id,
+			TopicID:        topic.ID,
 			Content:        content,
-			AuthorTheme:    authorTheme,
-			AuthorInitials: authorInitials,
+			AuthorTheme:    user.Theme,
+			AuthorInitials: user.Initials,
 		}
 
 		_, err = h.storage.CreateMessage(&message)
@@ -220,7 +228,7 @@ func SettingsUpdate(h HandlerHelper) http.HandlerFunc {
 // cookie in their local browser with user information.
 func JoinShow(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, _ := userFromContext(r.Context())
+		user, _ := UserFromSession(h.session, r)
 
 		// Redirect to homepage if user exists
 		if user != nil {
@@ -254,17 +262,12 @@ func JoinCreate(h *HandlerHelper) http.HandlerFunc {
 			panic(err)
 		}
 
-		u := User{initials, theme}
-		j, err := json.Marshal(u)
+		u := &User{initials, theme}
 
-		if err != nil {
+		if err := saveUserToSession(u, h.session, r, w); err != nil {
 			panic(err)
 		}
 
-		encoded := base64.StdEncoding.EncodeToString([]byte(j))
-		c := http.Cookie{Name: "u", Value: encoded}
-
-		http.SetCookie(w, &c)
 		http.Redirect(w, r, "/topics", 302)
 	})
 }

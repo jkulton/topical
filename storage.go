@@ -59,9 +59,7 @@ func (s *Storage) GetTopic(id int) (*Topic, error) {
 		var posted string
 		var authorTheme int
 
-		err = rows.Scan(&id, &title, &content, &authorInitials, &authorTheme, &posted)
-
-		if err != nil {
+		if err = rows.Scan(&id, &title, &content, &authorInitials, &authorTheme, &posted); err != nil {
 			log.Fatal(err)
 			return nil, err
 		}
@@ -79,9 +77,8 @@ func (s *Storage) GetTopic(id int) (*Topic, error) {
 			AuthorTheme:    authorTheme,
 		})
 	}
-	err = rows.Err()
 
-	if err != nil {
+	if err = rows.Err(); err != nil {
 		log.Fatal(err)
 		return nil, err
 	}
@@ -135,9 +132,8 @@ func (s *Storage) GetRecentTopics() ([]Topic, error) {
 			AuthorTheme:    &authorTheme,
 		})
 	}
-	err = rows.Err()
 
-	if err != nil {
+	if err = rows.Err(); err != nil {
 		log.Fatal(err)
 		return nil, err
 	}

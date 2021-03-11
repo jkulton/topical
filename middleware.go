@@ -1,10 +1,8 @@
 package main
 
 import (
-	"context"
-	"encoding/base64"
-	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"html"
 	"log"
 	"net/http"
@@ -21,16 +19,17 @@ func RequestLoggerMiddleware(next http.Handler) http.Handler {
 
 // ProtectedRouteMiddleware redirects home if a protected route is attempted
 // to be accessed without a user present in Context.
-func ProtectedRouteMiddleware(protectedRouteNames []string) mux.MiddlewareFunc {
+func ProtectedRouteMiddleware(protectedRouteNames []string, s *sessions.CookieStore) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			isProtectedRoute := false
 			routeName := mux.CurrentRoute(r).GetName()
-			_, err := userFromContext(r.Context())
+			_, err := UserFromSession(s, r)
 
 			for _, protected := range protectedRouteNames {
 				if routeName == protected {
 					isProtectedRoute = true
+					break
 				}
 			}
 
@@ -43,25 +42,4 @@ func ProtectedRouteMiddleware(protectedRouteNames []string) mux.MiddlewareFunc {
 			next.ServeHTTP(w, r)
 		})
 	}
-}
-
-// UserMiddleware extracts the user from request cookie and stores user in context
-func UserMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		var user User
-		cookie, err := r.Cookie("u")
-
-		if err != nil {
-			ctx = context.WithValue(ctx, ContextUserKey, nil)
-		} else {
-			cookieByte, _ := base64.StdEncoding.DecodeString(cookie.Value)
-			cookieStr := string(cookieByte)
-			json.Unmarshal([]byte(cookieStr), &user)
-			ctx = context.WithValue(ctx, ContextUserKey, user)
-		}
-
-		rWithUser := r.WithContext(ctx)
-		next.ServeHTTP(w, rWithUser)
-	})
 }

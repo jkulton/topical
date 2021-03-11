@@ -4,45 +4,50 @@ package main
 
 Remaining TODOs:
 
-- update to gorilla/sessions (for Flash messages and a little security around user)
-- settings PUT for dark/light mode (use gorilla/sessions)
+- add Flash message errors
+- settings PUT for dark/light mode (session data)
 - update to Postgres for Heroku deployment
-- create some logging Middleware?
 - UI redesign
+- get rid of ProtectedRouteMiddleware? we still do a second check in the handler anyhow
+	- only three routes are protected so seems safer to just do it manually for now
 
 DONE:
 
+- update to gorilla/sessions for cookie stuff
 - refactor UserMiddleware
 - redirect home on POST endpoints when user wasn't parsed
 - make sure we have validation around user initials being two characters
 - break app into multiple files
+- create some logging Middleware?
 
 **/
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"log"
 	"net/http"
 )
 
 func main() {
-	// Set up helper providing DB interface and HTML templates to route handlers
-	templates := GenerateTemplates("views/*.gohtml")
+	// Create helper providing DB, templates, and cookie features to handlers
+	session := sessions.NewCookieStore([]byte("69d3f5e8-d6b2-46ee-ad47-da2a12fb67ee"))
 	storage, err := NewStorage("sqlite3", "./tinyboard.db")
+	templates := GenerateTemplates("views/*.gohtml")
 
 	if err != nil {
 		log.Print("Error initializing storage")
 		panic(err)
 	}
 
-	defer storage.db.Close()
-	h := &HandlerHelper{templates, storage}
+	h := &HandlerHelper{templates, storage, session}
+
+	// Routes
 	r := mux.NewRouter()
 
-	// Serve files under `/static` (FE assets)
+	// Serve FE assets under `/static`
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 
-	// Register routes
 	r.HandleFunc("/topics", TopicCreate(h)).Methods("POST").Name("TopicCreate")
 	r.HandleFunc("/topics/new", TopicNew(h)).Methods("GET").Name("TopicNew")
 	r.HandleFunc("/topics/{id}/messages", MessageCreate(h)).Methods("POST").Name("MessageCreate")
@@ -55,11 +60,10 @@ func main() {
 
 	// Middleware Registration
 	r.Use(RequestLoggerMiddleware)
-	r.Use(UserMiddleware)
 
 	// Protected Routes are those which require a user be logged in.
 	protectedRoutes := []string{"TopicCreate", "TopicNew", "MessageCreate"}
-	r.Use(ProtectedRouteMiddleware(protectedRoutes))
+	r.Use(ProtectedRouteMiddleware(protectedRoutes, session))
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
