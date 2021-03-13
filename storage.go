@@ -8,10 +8,12 @@ import (
 	"log"
 )
 
+// Storage is an interface for interacting with a storage layer
 type Storage struct {
 	db *sql.DB
 }
 
+// NewStorage creates a new Storage entity with a provided driver and database name
 func NewStorage(driver, database string) (*Storage, error) {
 	var err error
 
@@ -25,6 +27,7 @@ func NewStorage(driver, database string) (*Storage, error) {
 	return stg, nil
 }
 
+// GetTopic retrieves a topic from DB by topic
 func (s *Storage) GetTopic(id int) (*Topic, error) {
 	topic := Topic{}
 	messages := []Message{}
@@ -88,12 +91,9 @@ func (s *Storage) GetTopic(id int) (*Topic, error) {
 	return &topic, nil
 }
 
+// GetRecentTopics returns a list of the 50 most recently posted-on topics
 func (s *Storage) GetRecentTopics() ([]Topic, error) {
 	topics := []Topic{}
-	/**
-		TODO: Fix subquery for author_theme, need to join color table.
-		TODO: This entire query can be made more performant.
-	**/
 	query := `
 		SELECT DISTINCT topics.*,
 			(SELECT COUNT(messages.id) FROM messages WHERE topic_id = topics.id) AS "message_count",
@@ -141,8 +141,8 @@ func (s *Storage) GetRecentTopics() ([]Topic, error) {
 	return topics, nil
 }
 
+// CreateMessage inserts a message into the DB
 func (s *Storage) CreateMessage(m *Message) (*Message, error) {
-
 	sql := `INSERT INTO messages (topic_id, content, author_initials, author_theme) VALUES (?, ?, ?, ?)`
 	query, err := s.db.Prepare(sql)
 
@@ -161,9 +161,8 @@ func (s *Storage) CreateMessage(m *Message) (*Message, error) {
 	return m, nil
 }
 
+// CreateTopic inserts a new topic into the DB
 func (s *Storage) CreateTopic(title string) (*Topic, error) {
-
-	// SQLite doesn't support INSERT ... RETURNING, this is a workaround for that.
 	query, err := s.db.Prepare(`INSERT INTO topics (title) VALUES (?)`)
 
 	if err != nil {

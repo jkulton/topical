@@ -50,9 +50,47 @@ func saveUserToSession(u *User, s *sessions.CookieStore, r *http.Request, w http
 	return nil
 }
 
+func saveFlashToSession(message string, s *sessions.CookieStore, r *http.Request, w http.ResponseWriter) error {
+	session, err := s.Get(r, "flashes")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	session.AddFlash(message)
+	err = session.Save(r, w)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	return nil
+}
+
+func flashesFromSession(s *sessions.CookieStore, r *http.Request, w http.ResponseWriter) ([]string, error) {
+	session, _ := s.Get(r, "flashes")
+	flashStrings := []string{}
+	flashes := session.Flashes()
+
+	if len(flashes) == 0 {
+		return nil, errors.New("No flashes found")
+	}
+
+	for _, flash := range flashes {
+		flashStrings = append(flashStrings, flash.(string))
+	}
+
+	session.Save(r, w)
+
+	return flashStrings, nil
+}
+
 // TopicList renders a list of recent topics with message counts in order of most recent post
 func TopicList(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		flashes, err := flashesFromSession(h.session, r, w)
 		user, _ := userFromSession(h.session, r)
 		topics, err := h.storage.GetRecentTopics()
 
@@ -62,9 +100,10 @@ func TopicList(h *HandlerHelper) http.HandlerFunc {
 		}
 
 		payload := struct {
-			Topics []Topic
-			User   *User
-		}{Topics: topics, User: user}
+			Topics  []Topic
+			User    *User
+			Flashes []string
+		}{Topics: topics, User: user, Flashes: flashes}
 
 		h.templates.ExecuteTemplate(w, "list", payload)
 	})
@@ -89,10 +128,11 @@ func TopicShow(h *HandlerHelper) http.HandlerFunc {
 			log.Panic(err)
 		}
 
-		// TODO: improve this check. helper should just return `nil` outright.
-		// Redirect home with a toast message in the header.
 		if topic.ID == nil {
-			w.Write([]byte("404 topic not found"))
+			if err := saveFlashToSession("Topic not found", h.session, r, w); err != nil {
+				panic(err)
+			}
+			http.Redirect(w, r, "/topics", 302)
 			return
 		}
 
@@ -111,7 +151,9 @@ func MessageCreate(h *HandlerHelper) http.HandlerFunc {
 		user, err := userFromSession(h.session, r)
 
 		if err != nil {
-			log.Print("User does not exist, redirecting home")
+			if err := saveFlashToSession("Please join to create a message", h.session, r, w); err != nil {
+				panic(err)
+			}
 			http.Redirect(w, r, "/topics", 302)
 			return
 		}
@@ -136,9 +178,10 @@ func MessageCreate(h *HandlerHelper) http.HandlerFunc {
 		}
 
 		if _, err := h.storage.CreateMessage(&message); err != nil {
-			log.Print("Error calling createMessage")
 			log.Panic(err)
-			// TODO: toast error?
+			if err := saveFlashToSession("Error creating message", h.session, r, w); err != nil {
+				panic(err)
+			}
 			http.Redirect(w, r, "/topics", 302)
 		}
 
@@ -153,6 +196,9 @@ func TopicNew(h *HandlerHelper) http.HandlerFunc {
 
 		if err != nil {
 			log.Print("User does not exist, redirecting home")
+			if err := saveFlashToSession("Log in to post a message", h.session, r, w); err != nil {
+				panic(err)
+			}
 			http.Redirect(w, r, "/topics", 302)
 			return
 		}
@@ -169,6 +215,9 @@ func TopicCreate(h *HandlerHelper) http.HandlerFunc {
 
 		if err != nil {
 			log.Print("User does not exist, redirecting home")
+			if err := saveFlashToSession("Log in to post a topic", h.session, r, w); err != nil {
+				panic(err)
+			}
 			http.Redirect(w, r, "/topics", 302)
 			return
 		}
@@ -196,7 +245,6 @@ func TopicCreate(h *HandlerHelper) http.HandlerFunc {
 			log.Panic(err)
 		}
 
-		// TODO: check for best status code on creation redirect
 		http.Redirect(w, r, fmt.Sprintf("/topics/%d", *topic.ID), 302)
 	})
 }
@@ -259,8 +307,8 @@ func JoinCreate(h *HandlerHelper) http.HandlerFunc {
 		}
 
 		if matched == false {
-			// TODO: add Flash about submission being invalid
 			http.Redirect(w, r, "/join", 302)
+			return
 		}
 
 		theme, err := strconv.Atoi(r.FormValue("theme"))
