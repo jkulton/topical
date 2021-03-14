@@ -7,13 +7,22 @@
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="shortcut icon" href="/static/favicon-light.ico" />
   </head>
-  <body class="dark-mode">
+  <body class="">
 
     <section class="header">
       <a class="logo" href="/">
         Tinyboard<svg class="feather feather-message-square sc-dnqmqq jxshSx" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-reactid="766"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
       </a>
     </section>
+
+    {{ if .Flashes }}
+      {{range .Flashes}}
+        <section class="flash flash-error">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-alert-circle"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12" y2="16"></line></svg>
+          {{.}}
+        </section>
+      {{end}}
+    {{ end }}
 
     <section class="topics">
       {{range .Topics}}

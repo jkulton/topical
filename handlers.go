@@ -1,12 +1,11 @@
 package main
 
 import (
-	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"html/template"
 	"log"
 	"net/http"
@@ -14,32 +13,85 @@ import (
 	"strconv"
 )
 
-type ContextKey string
-
-const ContextUserKey ContextKey = "user"
-
 // HandlerHelper provides useful helpers to handler functions
 type HandlerHelper struct {
 	templates *template.Template
 	storage   *Storage
+	session   *sessions.CookieStore
 }
 
-func userFromContext(ctx context.Context) (*User, error) {
-	userValue := ctx.Value(ContextUserKey)
+func userFromSession(s *sessions.CookieStore, r *http.Request) (*User, error) {
+	session, _ := s.Get(r, "u")
+	val := session.Values["user"]
+	var u *User
 
-	if userValue == nil {
+	if val == nil {
 		return nil, errors.New("User not found")
 	}
 
-	user := userValue.(User)
+	json.Unmarshal([]byte(val.(string)), &u)
+	return u, nil
+}
 
-	return &user, nil
+func saveUserToSession(u *User, s *sessions.CookieStore, r *http.Request, w http.ResponseWriter) error {
+	session, _ := s.Get(r, "u")
+	j, err := json.Marshal(u)
+
+	if err != nil {
+		return errors.New("Unable to save user")
+	}
+
+	session.Values["user"] = string(j)
+
+	if err := session.Save(r, w); err != nil {
+		return errors.New("Unable to save user")
+	}
+
+	return nil
+}
+
+func saveFlashToSession(message string, s *sessions.CookieStore, r *http.Request, w http.ResponseWriter) error {
+	session, err := s.Get(r, "flashes")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	session.AddFlash(message)
+	err = session.Save(r, w)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	return nil
+}
+
+func flashesFromSession(s *sessions.CookieStore, r *http.Request, w http.ResponseWriter) ([]string, error) {
+	session, _ := s.Get(r, "flashes")
+	flashStrings := []string{}
+	flashes := session.Flashes()
+
+	if len(flashes) == 0 {
+		return nil, errors.New("No flashes found")
+	}
+
+	for _, flash := range flashes {
+		flashStrings = append(flashStrings, flash.(string))
+	}
+
+	session.Save(r, w)
+
+	return flashStrings, nil
 }
 
 // TopicList renders a list of recent topics with message counts in order of most recent post
 func TopicList(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, _ := userFromContext(r.Context())
+		flashes, err := flashesFromSession(h.session, r, w)
+		user, _ := userFromSession(h.session, r)
 		topics, err := h.storage.GetRecentTopics()
 
 		if err != nil {
@@ -48,9 +100,10 @@ func TopicList(h *HandlerHelper) http.HandlerFunc {
 		}
 
 		payload := struct {
-			Topics []Topic
-			User   *User
-		}{Topics: topics, User: user}
+			Topics  []Topic
+			User    *User
+			Flashes []string
+		}{Topics: topics, User: user, Flashes: flashes}
 
 		h.templates.ExecuteTemplate(w, "list", payload)
 	})
@@ -59,7 +112,7 @@ func TopicList(h *HandlerHelper) http.HandlerFunc {
 // TopicShow renders a topic with it's associated threaded messages
 func TopicShow(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, _ := userFromContext(r.Context())
+		user, _ := userFromSession(h.session, r)
 		vars := mux.Vars(r)
 		id, err := strconv.Atoi(vars["id"])
 
@@ -75,10 +128,11 @@ func TopicShow(h *HandlerHelper) http.HandlerFunc {
 			log.Panic(err)
 		}
 
-		// TODO: improve this check. helper should just return `nil` outright.
-		// Redirect home with a toast message in the header.
 		if topic.ID == nil {
-			w.Write([]byte("404 topic not found"))
+			if err := saveFlashToSession("Topic not found", h.session, r, w); err != nil {
+				panic(err)
+			}
+			http.Redirect(w, r, "/topics", 302)
 			return
 		}
 
@@ -94,9 +148,12 @@ func TopicShow(h *HandlerHelper) http.HandlerFunc {
 // MessageCreate accepts a form POST, creating a message within a given Topic
 func MessageCreate(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, err := userFromContext(r.Context())
+		user, err := userFromSession(h.session, r)
 
 		if err != nil {
+			if err := saveFlashToSession("Please join to create a message", h.session, r, w); err != nil {
+				panic(err)
+			}
 			http.Redirect(w, r, "/topics", 302)
 			return
 		}
@@ -120,12 +177,11 @@ func MessageCreate(h *HandlerHelper) http.HandlerFunc {
 			AuthorInitials: authorInitials,
 		}
 
-		_, err = h.storage.CreateMessage(&message)
-
-		if err != nil {
-			log.Print("Error calling createMessage")
+		if _, err := h.storage.CreateMessage(&message); err != nil {
 			log.Panic(err)
-			// TODO: toast error?
+			if err := saveFlashToSession("Error creating message", h.session, r, w); err != nil {
+				panic(err)
+			}
 			http.Redirect(w, r, "/topics", 302)
 		}
 
@@ -136,9 +192,18 @@ func MessageCreate(h *HandlerHelper) http.HandlerFunc {
 // TopicNew renders a form for creating a new topic
 func TopicNew(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, _ := userFromContext(r.Context())
-		payload := struct{ User *User }{User: user}
+		user, err := userFromSession(h.session, r)
 
+		if err != nil {
+			log.Print("User does not exist, redirecting home")
+			if err := saveFlashToSession("Log in to post a message", h.session, r, w); err != nil {
+				panic(err)
+			}
+			http.Redirect(w, r, "/topics", 302)
+			return
+		}
+
+		payload := struct{ User *User }{User: user}
 		h.templates.ExecuteTemplate(w, "new-topic", payload)
 	})
 }
@@ -146,18 +211,19 @@ func TopicNew(h *HandlerHelper) http.HandlerFunc {
 // TopicCreate creates a new topic based on inputs from client
 func TopicCreate(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, err := userFromContext(r.Context())
+		user, err := userFromSession(h.session, r)
 
 		if err != nil {
+			log.Print("User does not exist, redirecting home")
+			if err := saveFlashToSession("Log in to post a topic", h.session, r, w); err != nil {
+				panic(err)
+			}
 			http.Redirect(w, r, "/topics", 302)
 			return
 		}
 
 		title := r.FormValue("title")
 		content := r.FormValue("content")
-		authorTheme := user.Theme
-		authorInitials := user.Initials
-
 		topic, err := h.storage.CreateTopic(title)
 
 		if err != nil {
@@ -165,13 +231,11 @@ func TopicCreate(h *HandlerHelper) http.HandlerFunc {
 			log.Panic(err)
 		}
 
-		id := topic.ID
-
 		message := Message{
-			TopicID:        id,
+			TopicID:        topic.ID,
 			Content:        content,
-			AuthorTheme:    authorTheme,
-			AuthorInitials: authorInitials,
+			AuthorTheme:    user.Theme,
+			AuthorInitials: user.Initials,
 		}
 
 		_, err = h.storage.CreateMessage(&message)
@@ -181,7 +245,6 @@ func TopicCreate(h *HandlerHelper) http.HandlerFunc {
 			log.Panic(err)
 		}
 
-		// TODO: check for best status code on creation redirect
 		http.Redirect(w, r, fmt.Sprintf("/topics/%d", *topic.ID), 302)
 	})
 }
@@ -220,7 +283,7 @@ func SettingsUpdate(h HandlerHelper) http.HandlerFunc {
 // cookie in their local browser with user information.
 func JoinShow(h *HandlerHelper) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, _ := userFromContext(r.Context())
+		user, _ := userFromSession(h.session, r)
 
 		// Redirect to homepage if user exists
 		if user != nil {
@@ -244,8 +307,8 @@ func JoinCreate(h *HandlerHelper) http.HandlerFunc {
 		}
 
 		if matched == false {
-			// TODO: add Flash about submission being invalid
 			http.Redirect(w, r, "/join", 302)
+			return
 		}
 
 		theme, err := strconv.Atoi(r.FormValue("theme"))
@@ -254,17 +317,12 @@ func JoinCreate(h *HandlerHelper) http.HandlerFunc {
 			panic(err)
 		}
 
-		u := User{initials, theme}
-		j, err := json.Marshal(u)
+		u := &User{initials, theme}
 
-		if err != nil {
+		if err := saveUserToSession(u, h.session, r, w); err != nil {
 			panic(err)
 		}
 
-		encoded := base64.StdEncoding.EncodeToString([]byte(j))
-		c := http.Cookie{Name: "u", Value: encoded}
-
-		http.SetCookie(w, &c)
 		http.Redirect(w, r, "/topics", 302)
 	})
 }
