@@ -1,10 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/russross/blackfriday"
+	"github.com/yuin/goldmark"
 	"log"
 )
 
@@ -61,6 +62,7 @@ func (s *Storage) GetTopic(id int) (*Topic, error) {
 		var authorInitials string
 		var posted string
 		var authorTheme int
+		var unsafeHTML bytes.Buffer
 
 		if err = rows.Scan(&id, &title, &content, &authorInitials, &authorTheme, &posted); err != nil {
 			log.Fatal(err)
@@ -70,8 +72,10 @@ func (s *Storage) GetTopic(id int) (*Topic, error) {
 		topic.ID = &id
 		topic.Title = title
 
-		unsafeHTML := blackfriday.MarkdownBasic([]byte(content))
-		safeHTML := bluemonday.UGCPolicy().SanitizeBytes(unsafeHTML)
+		if err := goldmark.Convert([]byte(content), &unsafeHTML); err != nil {
+			panic(err)
+		}
+		safeHTML := bluemonday.UGCPolicy().SanitizeBytes(unsafeHTML.Bytes())
 
 		messages = append(messages, Message{
 			Content:        string(safeHTML),

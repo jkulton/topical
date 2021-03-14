@@ -6,8 +6,8 @@ Remaining TODOs:
 
 - settings PUT for dark/light mode (session data)
 - update to Postgres for Heroku deployment
-- UI redesign
 - TESTS TESTS TESTS
+- implement new UI
 
 DONE:
 
@@ -20,6 +20,7 @@ DONE:
 - get rid of ProtectedRouteMiddleware? we still do a second check in the handler anyhow
 	- only three routes are protected so seems safer to just do it manually for now
 - add Flash message errors
+- UI redesign
 
 **/
 
