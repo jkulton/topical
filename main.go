@@ -32,29 +32,28 @@ import (
 )
 
 func main() {
-	// Create helper providing DB, templates, and cookie features to handlers
+	// Create server providing DB, templates, and cookie features to handlers
 	session := sessions.NewCookieStore([]byte("69d3f5e8-d6b2-46ee-ad47-da2a12fb67ee"))
 	storage, err := NewStorage("sqlite3", "./tinyboard.db")
 	templates := GenerateTemplates("views/*.gohtml")
+	s := &TopicServer{templates, storage, &Session{session}}
 
 	if err != nil {
 		log.Print("Error initializing storage")
 		panic(err)
 	}
 
-	h := &HandlerHelper{templates, storage, session}
-
 	// Routes
 	r := mux.NewRouter()
-	r.HandleFunc("/topics", TopicCreate(h)).Methods("POST").Name("TopicCreate")
-	r.HandleFunc("/topics/new", TopicNew(h)).Methods("GET").Name("TopicNew")
-	r.HandleFunc("/topics/{id}/messages", MessageCreate(h)).Methods("POST").Name("MessageCreate")
-	r.HandleFunc("/join", JoinShow(h)).Methods("GET").Name("JoinShow")
-	r.HandleFunc("/join", JoinCreate(h)).Methods("POST").Name("JoinCreate")
-	r.HandleFunc("/", TopicList(h)).Methods("GET").Name("TopicList")
-	r.HandleFunc("/topics", TopicList(h)).Methods("GET")
-	r.HandleFunc("/topics/", TopicList(h)).Methods("GET")
-	r.HandleFunc("/topics/{id:[0-9]+}", TopicShow(h)).Methods("GET").Name("TopicShow")
+	r.HandleFunc("/topics", s.TopicCreate).Methods("POST")
+	r.HandleFunc("/topics/new", s.TopicNew).Methods("GET")
+	r.HandleFunc("/topics/{id:[0-9]+}/messages", s.MessageCreate).Methods("POST")
+	r.HandleFunc("/join", s.JoinShow).Methods("GET")
+	r.HandleFunc("/join", s.JoinCreate).Methods("POST")
+	r.HandleFunc("/", s.TopicList).Methods("GET")
+	r.HandleFunc("/topics", s.TopicList).Methods("GET")
+	r.HandleFunc("/topics/", s.TopicList).Methods("GET")
+	r.HandleFunc("/topics/{id:[0-9]+}", s.TopicShow).Methods("GET")
 
 	// Serve FE assets under `/static`
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
