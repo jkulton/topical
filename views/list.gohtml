@@ -1,62 +1,42 @@
 {{define "list"}}
-<html>
-  <head>
-    <title>Tinyboard</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/static/styles.css">
-    <link rel="shortcut icon" href="/static/favicon-light.ico" />
-  </head>
-  <body class="">
+  <html>
+    {{template "head"}}
 
-    <section class="header">
-      <a class="logo" href="/">
-        Tinyboard<svg class="feather feather-message-square sc-dnqmqq jxshSx" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-reactid="766"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-      </a>
-    </section>
+    <body class="">
 
-    {{ if .Flashes }}
-      {{range .Flashes}}
-        <section class="flash flash-error">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-alert-circle"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12" y2="16"></line></svg>
-          {{.}}
+      {{template "header"}}
+
+      {{template "flash" .}}
+
+      <section class="topics">
+        {{range .Topics}}
+          <a href="/topics/{{.ID}}" class="topic">
+            <span class="user-logo theme-{{.AuthorTheme}}">
+              {{.AuthorInitials}}
+            </span>
+            {{.Title}}
+            <section class="topic-stats">
+              <section class="topic-replies">
+                {{.MessageCount}}
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              </section>
+            </section>
+          </a>
+          <span class="topic-divider"></span>
+        {{end}}
+      </section>
+
+      {{if .User}}
+        <section class="new-topic-wrapper">
+          <a href="/topics/new">+ Create a post</a>
+        </section>
+      {{else}}
+        <section class="new-topic-wrapper">
+          <a href="/join">Join to post</a>
         </section>
       {{end}}
-    {{ end }}
 
-    <section class="topics">
-      {{range .Topics}}
-        <a href="/topics/{{.ID}}" class="topic">
-          <span class="user-logo theme-{{.AuthorTheme}}">
-            {{.AuthorInitials}}
-          </span>
-          {{.Title}}
-          <section class="topic-stats">
-            <section class="topic-replies">
-              {{.MessageCount}}
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            </section>
-          </section>
-        </a>
-        <span class="topic-divider"></span>
-      {{end}}
-    </section>
-
-    {{if .User}}
-      <section class="new-topic-wrapper">
-        <a href="/topics/new">Create a post</a>
-      </section>
-    {{else}}
-      <section class="new-topic-wrapper">
-        <a href="/join">Join to post</a>
-      </section>
-    {{end}}
-
-    <section class="footer">
-      <a class="simple-link" href="/">
-        Tinyboard<svg class="feather feather-message-square sc-dnqmqq jxshSx" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-reactid="766"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-      </a>
-    </section>
-  </body>
-</html>
+      {{template "footer"}}
+    </body>
+  </html>
 {{end}}

@@ -1,42 +1,35 @@
 {{define "new-topic"}}
-<html>
-  <head>
-    <title>Tinyboard</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/static/styles.css">
-    <link rel="shortcut icon" href="/static/favicon-light.ico" />
-  </head>
-  <body class="">
+  <html>
+    {{template "head"}}
 
-    <section class="header">
-      <a class="logo" href="/">
-        Tinyboard<svg class="feather feather-message-square sc-dnqmqq jxshSx" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-reactid="766"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-      </a>
-    </section>
+    <body class="">
 
-    <form class="new-message-wrapper" method="post" action="/topics">
-      <section>
-        <label>Title</label>
-        <input class="new-topic-title" type="text" name="title" required/>
-      </section>
+      {{template "header"}}
 
-      <section class="new-message-header">
-        <label>Message</label>
-        <span class="mla text-small">Markdown supported</span>
-      </section>
-      <textarea name="content" class="message-editor" required></textarea>
-      <section class="new-message-footer">
-        <span class="user-logo theme-{{.User.Theme}}">{{.User.Initials}}</span>
-        <button type="submit" class="button theme-1">Post</button>
-      </section>
-    </form>
+      {{template "flash" .}}
 
-    <section class="footer">
-      <a class="simple-link" href="/">
-        Tinyboard<svg class="feather feather-message-square sc-dnqmqq jxshSx" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-reactid="766"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-      </a>
-    </section>
-  </body>
-</html>
+      <h1 class="header-title">Create a Topic</h1>
+
+      <form class="new-message-form new-topic-form" method="post" action="/topics">
+        <section>
+          <label>Title</label>
+          <input class="new-topic-title" type="text" name="title" required/>
+        </section>
+
+        <section>
+          <label>Message</label>
+          <section class="new-message-wrapper">
+            <span class="user-logo theme-{{.User.Theme}}">{{.User.Initials}}</span>
+            <textarea name="content" class="message-editor" required></textarea>
+            <section class="new-message-footer">
+              <span class="markdown-label text-small">(Markdown Supported)</span>
+              <button type="submit" class="button-primary">Post</button>
+            </section>
+          </section>
+        </section>
+      </form>
+
+      {{template "footer"}}
+    </body>
+  </html>
 {{end}}
