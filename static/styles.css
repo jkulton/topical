@@ -166,7 +166,11 @@ pre code {
   line-height: 1.5rem;
 }
 
-.message p:first-child {
+.message p:first-child,
+.message h1:first-child,
+.message h2:first-child,
+.message h3:first-child,
+.message h4:first-child {
   margin-top: 0;
 }
 
@@ -181,6 +185,7 @@ pre code {
 
 .new-message-footer {
   display: flex;
+  margin-top: 8px;
 }
 
 button.button-primary {
