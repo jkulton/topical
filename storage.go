@@ -7,6 +7,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
 	"log"
+	"time"
 )
 
 type TopicalStore interface {
@@ -23,10 +24,11 @@ type Storage struct {
 
 // Message represents a message entity, messages have a M:1 relationship with Topics
 type Message struct {
+	ID             *int
 	TopicID        *int
 	Content        string
 	AuthorInitials string
-	Posted         string
+	Posted         time.Time
 	AuthorTheme    int
 }
 
@@ -58,7 +60,7 @@ func (t *Storage) GetTopic(id int) (*Topic, error) {
 	topic := Topic{}
 	messages := []Message{}
 	query := `
-		SELECT topics.id, topics.title, messages.content, messages.author_initials, messages.author_theme, messages.posted
+		SELECT topics.id, topics.title, messages.content, messages.author_initials, messages.author_theme, messages.posted, messages.id
 		FROM topics
 		INNER JOIN messages ON messages.topic_id = topics.id
 		WHERE topics.id = ?
@@ -74,16 +76,17 @@ func (t *Storage) GetTopic(id int) (*Topic, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var id, authorTheme int
-		var title, content, authorInitials, posted string
+		var topicID, authorTheme, messageID int
+		var title, content, authorInitials string
+		var posted time.Time
 		var unsafeHTML bytes.Buffer
 
-		if err = rows.Scan(&id, &title, &content, &authorInitials, &authorTheme, &posted); err != nil {
+		if err = rows.Scan(&topicID, &title, &content, &authorInitials, &authorTheme, &posted, &messageID); err != nil {
 			log.Fatal(err)
 			return nil, err
 		}
 
-		topic.ID = &id
+		topic.ID = &topicID
 		topic.Title = title
 
 		if err := goldmark.Convert([]byte(content), &unsafeHTML); err != nil {
@@ -92,6 +95,7 @@ func (t *Storage) GetTopic(id int) (*Topic, error) {
 		safeHTML := bluemonday.UGCPolicy().SanitizeBytes(unsafeHTML.Bytes())
 
 		messages = append(messages, Message{
+			ID:             &messageID,
 			Content:        string(safeHTML),
 			AuthorInitials: authorInitials,
 			Posted:         posted,
