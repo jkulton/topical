@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // TopicServer provides HTTP handlers to routes, and template and storage helpers
@@ -40,6 +41,7 @@ func (s *TopicServer) TopicList(w http.ResponseWriter, r *http.Request) {
 
 // TopicShow renders a topic with it's associated threaded messages
 func (s *TopicServer) TopicShow(w http.ResponseWriter, r *http.Request) {
+	flashes, _ := s.session.GetFlashes(r, w)
 	user, _ := s.session.GetUser(r)
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 
@@ -62,9 +64,10 @@ func (s *TopicServer) TopicShow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	payload := struct {
-		Topic *Topic
-		User  *User
-	}{topic, user}
+		Topic   *Topic
+		User    *User
+		Flashes []string
+	}{topic, user, flashes}
 
 	s.templates.ExecuteTemplate(w, "show", payload)
 }
@@ -87,9 +90,15 @@ func (s *TopicServer) MessageCreate(w http.ResponseWriter, r *http.Request) {
 		log.Panic(err)
 	}
 
-	content := r.FormValue("content")
+	content := strings.TrimSpace(r.FormValue("content"))
 	authorTheme := user.Theme
 	authorInitials := user.Initials
+
+	if content == "" {
+		s.session.SaveFlash("Content cannot be blank", r, w)
+		http.Redirect(w, r, fmt.Sprintf("/topics/%d", id), 302)
+		return
+	}
 
 	message := Message{
 		TopicID:        &id,
@@ -110,6 +119,7 @@ func (s *TopicServer) MessageCreate(w http.ResponseWriter, r *http.Request) {
 
 // TopicNew renders a form for creating a new topic
 func (s *TopicServer) TopicNew(w http.ResponseWriter, r *http.Request) {
+	flashes, _ := s.session.GetFlashes(r, w)
 	user, err := s.session.GetUser(r)
 
 	if err != nil {
@@ -119,7 +129,11 @@ func (s *TopicServer) TopicNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	payload := struct{ User *User }{User: user}
+	payload := struct {
+		User    *User
+		Flashes []string
+	}{user, flashes}
+
 	s.templates.ExecuteTemplate(w, "new-topic", payload)
 }
 
@@ -134,8 +148,15 @@ func (s *TopicServer) TopicCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	title := r.FormValue("title")
-	content := r.FormValue("content")
+	title := strings.TrimSpace(r.FormValue("title"))
+	content := strings.TrimSpace(r.FormValue("content"))
+
+	if content == "" || title == "" {
+		s.session.SaveFlash("Inputs cannot be blank", r, w)
+		http.Redirect(w, r, "/topics/new", 302)
+		return
+	}
+
 	topic, err := s.storage.CreateTopic(title)
 
 	if err != nil {
