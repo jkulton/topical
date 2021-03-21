@@ -4,10 +4,8 @@ package main
 
 Remaining TODOs:
 
-- settings PUT for dark/light mode (session data)
-- update to Postgres for Heroku deployment
-- TESTS TESTS TESTS
-- implement new UI
+- move main.go code into /cmd for bin
+- dark mode option?
 
 DONE:
 
@@ -21,10 +19,16 @@ DONE:
 	- only three routes are protected so seems safer to just do it manually for now
 - add Flash message errors
 - UI redesign
+- TESTS TESTS TESTS
+- settings PUT for dark/light mode (session data)
+- implement new UI
+- update to Postgres for Heroku deployment
+- pass config (ports, ssl, db) values through env
 
 **/
 
 import (
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"log"
@@ -32,9 +36,11 @@ import (
 )
 
 func main() {
+	ac := ParseAppConfig()
+	// log.Print(ac)
 	// Create server providing DB, templates, and cookie features to handlers
-	session := sessions.NewCookieStore([]byte("69d3f5e8-d6b2-46ee-ad47-da2a12fb67ee"))
-	storage, err := NewStorage("sqlite3", "./tinyboard.db")
+	session := sessions.NewCookieStore([]byte(ac.SessionKey))
+	storage, err := NewStorage(ac)
 	templates := GenerateTemplates("views/*.gohtml")
 	s := &TopicServer{templates, storage, &Session{session}}
 
@@ -61,5 +67,5 @@ func main() {
 	// Middleware Registration
 	r.Use(RequestLoggerMiddleware)
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", ac.AppPort), r))
 }
