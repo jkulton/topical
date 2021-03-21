@@ -2,3 +2,4 @@
 *.out
 *.db.*
 .DS_Store
+postgres-data/*

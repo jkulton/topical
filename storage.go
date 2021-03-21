@@ -3,7 +3,8 @@ package main
 import (
 	"bytes"
 	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
+	"fmt"
+	_ "github.com/lib/pq"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
 	"log"
@@ -43,10 +44,13 @@ type Topic struct {
 }
 
 // NewStorage creates a new Storage entity with a provided driver and database name
-func NewStorage(driver, database string) (*Storage, error) {
+func NewStorage(ac AppConfig) (*Storage, error) {
 	var err error
+	options := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		ac.DBHost, ac.DBPort, ac.DBUser, ac.DBPassword, ac.DBName, ac.DBSSLMode)
+
 	stg := new(Storage)
-	stg.db, err = sql.Open(driver, database)
+	stg.db, err = sql.Open(ac.DBDriver, options)
 
 	if err != nil {
 		return nil, err
@@ -63,8 +67,8 @@ func (t *Storage) GetTopic(id int) (*Topic, error) {
 		SELECT topics.id, topics.title, messages.content, messages.author_initials, messages.author_theme, messages.posted, messages.id
 		FROM topics
 		INNER JOIN messages ON messages.topic_id = topics.id
-		WHERE topics.id = ?
-		ORDER BY posted;`
+		WHERE topics.id = $1
+		ORDER BY posted ASC;`
 
 	rows, err := t.db.Query(query, id)
 
@@ -119,8 +123,8 @@ func (t *Storage) GetRecentTopics() ([]Topic, error) {
 	query := `
 		SELECT DISTINCT topics.*,
 			(SELECT COUNT(messages.id) FROM messages WHERE topic_id = topics.id) AS "message_count",
-			(SELECT author_initials FROM messages WHERE topic_id = topics.id ORDER BY posted LIMIT 1) AS "author_initials",
-			(SELECT author_theme FROM messages WHERE topic_id = topics.id ORDER BY posted LIMIT 1) AS "author_theme",
+			(SELECT author_initials FROM messages WHERE topic_id = topics.id ORDER BY posted DESC LIMIT 1) AS "author_initials",
+			(SELECT author_theme FROM messages WHERE topic_id = topics.id ORDER BY posted DESC LIMIT 1) AS "author_theme",
 			(SELECT posted FROM messages WHERE topic_id = topics.id ORDER BY posted DESC LIMIT 1) AS "last_message"
 		FROM topics
 		INNER JOIN messages
@@ -164,15 +168,8 @@ func (t *Storage) GetRecentTopics() ([]Topic, error) {
 
 // CreateMessage inserts a message into the DB
 func (t *Storage) CreateMessage(m *Message) (*Message, error) {
-	sql := `INSERT INTO messages (topic_id, content, author_initials, author_theme) VALUES (?, ?, ?, ?)`
-	query, err := t.db.Prepare(sql)
-
-	if err != nil {
-		log.Print(err.Error())
-		return nil, err
-	}
-
-	_, err = query.Exec(&m.TopicID, m.Content, m.AuthorInitials, m.AuthorTheme)
+	sql := `INSERT INTO messages (topic_id, content, author_initials, author_theme) VALUES ($1, $2, $3, $4)`
+	_, err := t.db.Exec(sql, &m.TopicID, m.Content, m.AuthorInitials, m.AuthorTheme)
 
 	if err != nil {
 		log.Print(err.Error())
@@ -183,29 +180,16 @@ func (t *Storage) CreateMessage(m *Message) (*Message, error) {
 }
 
 // CreateTopic inserts a new topic into the DB
-func (t *Storage) CreateTopic(title string) (*Topic, error) {
-	query, err := t.db.Prepare(`INSERT INTO topics (title) VALUES (?)`)
+func (s *Storage) CreateTopic(title string) (*Topic, error) {
+	// sql := `INSERT INTO topics (title) VALUES ($1)`
+	id := 0
+	err := s.db.QueryRow(`INSERT INTO topics (title) VALUES ($1) RETURNING id`, title).Scan(&id)
 
 	if err != nil {
+		log.Print("1")
 		log.Print(err.Error())
 		return nil, err
 	}
-
-	res, err := query.Exec(title)
-
-	if err != nil {
-		log.Print(err.Error())
-		return nil, err
-	}
-
-	idInt64, err := res.LastInsertId()
-
-	if err != nil {
-		log.Print(err.Error())
-		return nil, err
-	}
-
-	id := int(idInt64)
 
 	return &Topic{ID: &id, Title: title}, nil
 }
