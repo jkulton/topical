@@ -1,4 +1,4 @@
-module github.com/jkulton/board
+module github.com/jkulton/topical
 
 go 1.14
 

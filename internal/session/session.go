@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/sessions"
-	"github.com/jkulton/board/internal/models"
+	"github.com/jkulton/topical/internal/models"
 	"log"
 	"net/http"
 )

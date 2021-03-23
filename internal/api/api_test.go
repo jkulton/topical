@@ -3,10 +3,9 @@ package api
 import (
 	"errors"
 	"github.com/gorilla/mux"
-	"github.com/jkulton/board/internal/models"
-	"github.com/jkulton/board/internal/session"
-	// "github.com/jkulton/board/internal/storage"
-	"github.com/jkulton/board/internal/templates"
+	"github.com/jkulton/topical/internal/models"
+	"github.com/jkulton/topical/internal/session"
+	"github.com/jkulton/topical/internal/templates"
 	"html/template"
 	"net/http"
 	"net/http/httptest"

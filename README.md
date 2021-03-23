@@ -1,3 +1,5 @@
-# board
+![Topical Banner](./assets/banner.png)
 
-A minimalist message board built with Golang
+# Topical
+
+A (very) minimalist message board

@@ -3,7 +3,7 @@ package storage
 import (
 	"bytes"
 	"database/sql"
-	"github.com/jkulton/board/internal/models"
+	"github.com/jkulton/topical/internal/models"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
 	"log"

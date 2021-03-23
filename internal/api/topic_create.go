@@ -2,7 +2,7 @@ package api
 
 import (
 	"fmt"
-	"github.com/jkulton/board/internal/models"
+	"github.com/jkulton/topical/internal/models"
 	"log"
 	"net/http"
 	"strings"

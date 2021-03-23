@@ -1,37 +1,15 @@
 package main
 
-/**
-
-- update to gorilla/sessions for cookie stuff
-- refactor UserMiddleware
-- redirect home on POST endpoints when user wasn't parsed
-- make sure we have validation around user initials being two characters
-- break app into multiple files
-- create some logging Middleware?
-- get rid of ProtectedRouteMiddleware? we still do a second check in the handler anyhow
-	- only three routes are protected so seems safer to just do it manually for now
-- add Flash message errors
-- UI redesign
-- TESTS TESTS TESTS
-- settings PUT for dark/light mode (session data)
-- implement new UI
-- update to Postgres for Heroku deployment
-- pass config (ports, ssl, db) values through env
-- move main.go code into /cmd for bin
-- dark mode option?
-
-**/
-
 import (
 	"database/sql"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/jkulton/board/internal/api"
-	"github.com/jkulton/board/internal/config"
-	"github.com/jkulton/board/internal/middleware"
-	"github.com/jkulton/board/internal/session"
-	"github.com/jkulton/board/internal/storage"
-	"github.com/jkulton/board/internal/templates"
+	"github.com/jkulton/topical/internal/api"
+	"github.com/jkulton/topical/internal/config"
+	"github.com/jkulton/topical/internal/middleware"
+	"github.com/jkulton/topical/internal/session"
+	"github.com/jkulton/topical/internal/storage"
+	"github.com/jkulton/topical/internal/templates"
 	_ "github.com/lib/pq" // Postgres driver
 	"log"
 	"net/http"

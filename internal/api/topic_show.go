@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/jkulton/board/internal/models"
+	"github.com/jkulton/topical/internal/models"
 	"log"
 	"net/http"
 	"strconv"

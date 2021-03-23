@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/jkulton/board/internal/models"
+	"github.com/jkulton/topical/internal/models"
 	"log"
 	"net/http"
 )

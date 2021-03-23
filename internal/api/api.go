@@ -2,8 +2,8 @@ package api
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/jkulton/board/internal/session"
-	"github.com/jkulton/board/internal/storage"
+	"github.com/jkulton/topical/internal/session"
+	"github.com/jkulton/topical/internal/storage"
 	"html/template"
 )
 
