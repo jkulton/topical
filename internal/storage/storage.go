@@ -1,12 +1,13 @@
-package main
+package storage
 
 import (
 	"bytes"
 	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/jkulton/board/internal/models"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
 	"log"
+	"time"
 )
 
 // Storage is an interface for interacting with a storage layer
@@ -14,39 +15,30 @@ type Storage struct {
 	db *sql.DB
 }
 
-// NewStorage creates a new Storage entity with a provided driver and database name
-func NewStorage(driver, database string) (*Storage, error) {
-	var err error
+type TopicalStore interface {
+	GetTopic(id int) (*models.Topic, error)
+	GetRecentTopics() ([]models.Topic, error)
+	CreateMessage(m *models.Message) (*models.Message, error)
+	CreateTopic(title string) (*models.Topic, error)
+}
 
-	stg := new(Storage)
-	stg.db, err = sql.Open(driver, database)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return stg, nil
+// New returns a new TopicalStore
+func New(db *sql.DB) *Storage {
+	return &Storage{db}
 }
 
 // GetTopic retrieves a topic from DB by topic
-func (s *Storage) GetTopic(id int) (*Topic, error) {
-	topic := Topic{}
-	messages := []Message{}
+func (t *Storage) GetTopic(id int) (*models.Topic, error) {
+	topic := models.Topic{}
+	messages := []models.Message{}
 	query := `
-		SELECT
-			topics.id,
-			topics.title,
-			messages.content,
-			messages.author_initials,
-			messages.author_theme,
-			messages.posted
+		SELECT topics.id, topics.title, messages.content, messages.author_initials, messages.author_theme, messages.posted, messages.id
 		FROM topics
 		INNER JOIN messages ON messages.topic_id = topics.id
-		WHERE topics.id = ?
-		ORDER BY posted;
-	`
+		WHERE topics.id = $1
+		ORDER BY posted ASC;`
 
-	rows, err := s.db.Query(query, id)
+	rows, err := t.db.Query(query, id)
 
 	if err != nil {
 		log.Fatal(err)
@@ -56,20 +48,17 @@ func (s *Storage) GetTopic(id int) (*Topic, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var id int
-		var title string
-		var content string
-		var authorInitials string
-		var posted string
-		var authorTheme int
+		var topicID, authorTheme, messageID int
+		var title, content, authorInitials string
+		var posted time.Time
 		var unsafeHTML bytes.Buffer
 
-		if err = rows.Scan(&id, &title, &content, &authorInitials, &authorTheme, &posted); err != nil {
+		if err = rows.Scan(&topicID, &title, &content, &authorInitials, &authorTheme, &posted, &messageID); err != nil {
 			log.Fatal(err)
 			return nil, err
 		}
 
-		topic.ID = &id
+		topic.ID = &topicID
 		topic.Title = title
 
 		if err := goldmark.Convert([]byte(content), &unsafeHTML); err != nil {
@@ -77,7 +66,8 @@ func (s *Storage) GetTopic(id int) (*Topic, error) {
 		}
 		safeHTML := bluemonday.UGCPolicy().SanitizeBytes(unsafeHTML.Bytes())
 
-		messages = append(messages, Message{
+		messages = append(messages, models.Message{
+			ID:             &messageID,
 			Content:        string(safeHTML),
 			AuthorInitials: authorInitials,
 			Posted:         posted,
@@ -96,21 +86,20 @@ func (s *Storage) GetTopic(id int) (*Topic, error) {
 }
 
 // GetRecentTopics returns a list of the 50 most recently posted-on topics
-func (s *Storage) GetRecentTopics() ([]Topic, error) {
-	topics := []Topic{}
+func (t *Storage) GetRecentTopics() ([]models.Topic, error) {
+	topics := []models.Topic{}
 	query := `
 		SELECT DISTINCT topics.*,
 			(SELECT COUNT(messages.id) FROM messages WHERE topic_id = topics.id) AS "message_count",
-			(SELECT author_initials FROM messages WHERE topic_id = topics.id ORDER BY posted LIMIT 1) AS "author_initials",
-			(SELECT author_theme FROM messages WHERE topic_id = topics.id ORDER BY posted LIMIT 1) AS "author_theme",
+			(SELECT author_initials FROM messages WHERE topic_id = topics.id ORDER BY posted DESC LIMIT 1) AS "author_initials",
+			(SELECT author_theme FROM messages WHERE topic_id = topics.id ORDER BY posted DESC LIMIT 1) AS "author_theme",
 			(SELECT posted FROM messages WHERE topic_id = topics.id ORDER BY posted DESC LIMIT 1) AS "last_message"
 		FROM topics
 		INNER JOIN messages
 		ON topics.id = messages.topic_id
 		ORDER BY last_message DESC
-		LIMIT 50;
-	`
-	rows, err := s.db.Query(query)
+		LIMIT 50;`
+	rows, err := t.db.Query(query)
 
 	if err != nil {
 		log.Fatal(err)
@@ -128,7 +117,7 @@ func (s *Storage) GetRecentTopics() ([]Topic, error) {
 			return nil, err
 		}
 
-		topics = append(topics, Topic{
+		topics = append(topics, models.Topic{
 			ID:             &id,
 			Title:          title,
 			MessageCount:   &messageCount,
@@ -146,16 +135,9 @@ func (s *Storage) GetRecentTopics() ([]Topic, error) {
 }
 
 // CreateMessage inserts a message into the DB
-func (s *Storage) CreateMessage(m *Message) (*Message, error) {
-	sql := `INSERT INTO messages (topic_id, content, author_initials, author_theme) VALUES (?, ?, ?, ?)`
-	query, err := s.db.Prepare(sql)
-
-	if err != nil {
-		log.Print(err.Error())
-		return nil, err
-	}
-
-	_, err = query.Exec(&m.TopicID, m.Content, m.AuthorInitials, m.AuthorTheme)
+func (t *Storage) CreateMessage(m *models.Message) (*models.Message, error) {
+	sql := `INSERT INTO messages (topic_id, content, author_initials, author_theme) VALUES ($1, $2, $3, $4)`
+	_, err := t.db.Exec(sql, &m.TopicID, m.Content, m.AuthorInitials, m.AuthorTheme)
 
 	if err != nil {
 		log.Print(err.Error())
@@ -166,29 +148,14 @@ func (s *Storage) CreateMessage(m *Message) (*Message, error) {
 }
 
 // CreateTopic inserts a new topic into the DB
-func (s *Storage) CreateTopic(title string) (*Topic, error) {
-	query, err := s.db.Prepare(`INSERT INTO topics (title) VALUES (?)`)
+func (s *Storage) CreateTopic(title string) (*models.Topic, error) {
+	id := 0
+	err := s.db.QueryRow(`INSERT INTO topics (title) VALUES ($1) RETURNING id`, title).Scan(&id)
 
 	if err != nil {
 		log.Print(err.Error())
 		return nil, err
 	}
 
-	res, err := query.Exec(title)
-
-	if err != nil {
-		log.Print(err.Error())
-		return nil, err
-	}
-
-	idInt64, err := res.LastInsertId()
-
-	if err != nil {
-		log.Print(err.Error())
-		return nil, err
-	}
-
-	id := int(idInt64)
-
-	return &Topic{ID: &id, Title: title}, nil
+	return &models.Topic{ID: &id, Title: title}, nil
 }

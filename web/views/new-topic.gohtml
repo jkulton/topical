@@ -1,0 +1,35 @@
+{{define "new-topic"}}
+  <html>
+    {{template "head"}}
+
+    <body class="support-dark-mode">
+
+      {{template "header"}}
+
+      {{template "flash" .}}
+
+      <h1 class="header-title">Create a Topic</h1>
+
+      <form class="new-message-form new-topic-form" method="post" action="/topics">
+        <section>
+          <label>Title</label>
+          <input class="new-topic-title" type="text" name="title" required/>
+        </section>
+
+        <section>
+          <label>Message</label>
+          <section class="new-message-wrapper">
+            <span class="user-logo theme-{{.User.Theme}}">{{.User.Initials}}</span>
+            <textarea name="content" class="message-editor" required></textarea>
+            <section class="new-message-footer">
+              <span class="markdown-label text-small">(Markdown Supported)</span>
+              <button type="submit" class="button-primary">Post</button>
+            </section>
+          </section>
+        </section>
+      </form>
+
+      {{template "footer"}}
+    </body>
+  </html>
+{{end}}

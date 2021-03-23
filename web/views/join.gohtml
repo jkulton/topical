@@ -1,0 +1,67 @@
+{{define "join"}}
+  <html>
+    {{template "head"}}
+
+    <body class="support-dark-mode">
+      {{template "header"}}
+
+      <h2 class="topic-title">Join the conversation.</h2>
+
+      <form class="signup-form" method="post" action="/join">
+
+        <section>
+          <label for="initials" class="signup-form-label">Two-character initials:</label>
+          <input placeholder="AA" class="mla" name="initials" type="text">
+        </section>
+
+        <section class="signup-form-color-section">
+          <label class="signup-form-label">
+            Favorite color:
+          </label>
+
+          <section>
+            <label class="color-1 black mla">
+              <input name="theme" value="1" type="radio">
+              <span></span>
+            </label>
+
+            <label class="color-2 gray">
+              <input name="theme" value="2" type="radio">
+              <span></span>
+            </label>
+
+            <label class="color-3 blue">
+              <input name="theme" value="3" type="radio" checked="">
+              <span></span>
+            </label>
+
+            <label class="color-4 purple">
+              <input name="theme" value="4" type="radio">
+              <span></span>
+            </label>
+
+            <label class="color-5 red">
+              <input name="theme" value="5" type="radio">
+              <span></span>
+            </label>
+
+            <label class="color-6 orange">
+              <input name="theme" value="6" type="radio">
+              <span></span>
+            </label>
+
+            <label class="color-7 green">
+              <input name="theme" value="7" type="radio">
+              <span></span>
+            </label>
+          </section>
+        </section>
+        <button type="submit" class="button-primary">Join</button>
+      </form>
+
+      {{template "footer"}}
+    </body>
+  </html>
+{{end}}
+
+

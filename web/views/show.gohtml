@@ -1,0 +1,55 @@
+{{define "show"}}
+<html>
+  {{template "head"}}
+
+  <body class="support-dark-mode">
+    {{template "header"}}
+
+    {{template "flash" .}}
+
+    <section class="topic-view">
+      <section class="topic-title">
+        <h2>{{ .Topic.Title  }}</h2>
+      </section>
+
+      <section class="topic-messages">
+        {{ range .Topic.Messages }}
+          <section class="message" id="message-{{.ID}}">
+            {{ noescape .Content }}
+            <span class="message-footer">
+              <span class="user-logo theme-{{.AuthorTheme}}">
+                {{ .AuthorInitials }}
+              </span>
+              <a class="message-link" href="#message-{{.ID}}">{{ .Posted.Format "Jan 02, 2006 @ 3:05PM" }}</a>
+            </span>
+          </section>
+        {{ end }}
+      </section>
+    </section>
+
+    {{if .User}}
+      <form class="new-message-form" method="post" action="/topics/{{ .Topic.ID }}/messages">
+        <section class="new-message-header">
+          <label class="italic">Post a reply</label>
+        </section>
+        <section class="new-message-wrapper">
+          <span class="user-logo theme-{{.User.Theme}}">
+            {{.User.Initials}}
+          </span>
+          <textarea name="content" class="message-editor"></textarea>
+          <section class="new-message-footer">
+            <span class="markdown-label text-small">(Markdown Supported)</span>
+            <button type="submit" class="button-primary">Post</button>
+          </section>
+        </section>
+      </form>
+    {{ else }}
+      <section class="new-topic-wrapper">
+        <a href="/join">Join to post</a>
+      </section>
+    {{ end }}
+
+    {{template "footer"}}
+  </body>
+</html>
+{{end}}
