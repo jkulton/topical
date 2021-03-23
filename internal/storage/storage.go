@@ -1,68 +1,36 @@
-package main
+package storage
 
 import (
 	"bytes"
 	"database/sql"
-	"fmt"
-	_ "github.com/lib/pq"
+	"github.com/jkulton/board/internal/models"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
 	"log"
 	"time"
 )
 
-type TopicalStore interface {
-	GetTopic(id int) (*Topic, error)
-	GetRecentTopics() ([]Topic, error)
-	CreateMessage(m *Message) (*Message, error)
-	CreateTopic(title string) (*Topic, error)
-}
-
 // Storage is an interface for interacting with a storage layer
 type Storage struct {
 	db *sql.DB
 }
 
-// Message represents a message entity, messages have a M:1 relationship with Topics
-type Message struct {
-	ID             *int
-	TopicID        *int
-	Content        string
-	AuthorInitials string
-	Posted         time.Time
-	AuthorTheme    int
+type TopicalStore interface {
+	GetTopic(id int) (*models.Topic, error)
+	GetRecentTopics() ([]models.Topic, error)
+	CreateMessage(m *models.Message) (*models.Message, error)
+	CreateTopic(title string) (*models.Topic, error)
 }
 
-// Topic represents a topic entity, one Topic can contain many Messages
-type Topic struct {
-	ID             *int
-	Title          string
-	Messages       *[]Message
-	MessageCount   *int
-	AuthorInitials *string
-	AuthorTheme    *string
-}
-
-// NewStorage creates a new Storage entity with a provided driver and database name
-func NewStorage(ac AppConfig) (*Storage, error) {
-	var err error
-	options := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		ac.DBHost, ac.DBPort, ac.DBUser, ac.DBPassword, ac.DBName, ac.DBSSLMode)
-
-	stg := new(Storage)
-	stg.db, err = sql.Open(ac.DBDriver, options)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return stg, nil
+// New returns a new TopicalStore
+func New(db *sql.DB) *Storage {
+	return &Storage{db}
 }
 
 // GetTopic retrieves a topic from DB by topic
-func (t *Storage) GetTopic(id int) (*Topic, error) {
-	topic := Topic{}
-	messages := []Message{}
+func (t *Storage) GetTopic(id int) (*models.Topic, error) {
+	topic := models.Topic{}
+	messages := []models.Message{}
 	query := `
 		SELECT topics.id, topics.title, messages.content, messages.author_initials, messages.author_theme, messages.posted, messages.id
 		FROM topics
@@ -98,7 +66,7 @@ func (t *Storage) GetTopic(id int) (*Topic, error) {
 		}
 		safeHTML := bluemonday.UGCPolicy().SanitizeBytes(unsafeHTML.Bytes())
 
-		messages = append(messages, Message{
+		messages = append(messages, models.Message{
 			ID:             &messageID,
 			Content:        string(safeHTML),
 			AuthorInitials: authorInitials,
@@ -118,8 +86,8 @@ func (t *Storage) GetTopic(id int) (*Topic, error) {
 }
 
 // GetRecentTopics returns a list of the 50 most recently posted-on topics
-func (t *Storage) GetRecentTopics() ([]Topic, error) {
-	topics := []Topic{}
+func (t *Storage) GetRecentTopics() ([]models.Topic, error) {
+	topics := []models.Topic{}
 	query := `
 		SELECT DISTINCT topics.*,
 			(SELECT COUNT(messages.id) FROM messages WHERE topic_id = topics.id) AS "message_count",
@@ -149,7 +117,7 @@ func (t *Storage) GetRecentTopics() ([]Topic, error) {
 			return nil, err
 		}
 
-		topics = append(topics, Topic{
+		topics = append(topics, models.Topic{
 			ID:             &id,
 			Title:          title,
 			MessageCount:   &messageCount,
@@ -167,7 +135,7 @@ func (t *Storage) GetRecentTopics() ([]Topic, error) {
 }
 
 // CreateMessage inserts a message into the DB
-func (t *Storage) CreateMessage(m *Message) (*Message, error) {
+func (t *Storage) CreateMessage(m *models.Message) (*models.Message, error) {
 	sql := `INSERT INTO messages (topic_id, content, author_initials, author_theme) VALUES ($1, $2, $3, $4)`
 	_, err := t.db.Exec(sql, &m.TopicID, m.Content, m.AuthorInitials, m.AuthorTheme)
 
@@ -180,16 +148,14 @@ func (t *Storage) CreateMessage(m *Message) (*Message, error) {
 }
 
 // CreateTopic inserts a new topic into the DB
-func (s *Storage) CreateTopic(title string) (*Topic, error) {
-	// sql := `INSERT INTO topics (title) VALUES ($1)`
+func (s *Storage) CreateTopic(title string) (*models.Topic, error) {
 	id := 0
 	err := s.db.QueryRow(`INSERT INTO topics (title) VALUES ($1) RETURNING id`, title).Scan(&id)
 
 	if err != nil {
-		log.Print("1")
 		log.Print(err.Error())
 		return nil, err
 	}
 
-	return &Topic{ID: &id, Title: title}, nil
+	return &models.Topic{ID: &id, Title: title}, nil
 }

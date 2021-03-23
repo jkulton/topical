@@ -1,5 +1,4 @@
-*.db
 *.out
-*.db.*
 .DS_Store
 postgres-data/*
+postgres-data/

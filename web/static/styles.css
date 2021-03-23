@@ -135,6 +135,7 @@ pre code {
   align-items: center;
   padding: 8px;
   border-radius: 4px;
+  text-decoration: none;
 }
 
 .logo:hover {
@@ -417,55 +418,64 @@ label.purple > span { background: #673ab7; }
   background: #f5eccb;
 }
 
-body.dark-mode {
-  background: #24292d;
-}
+@media (prefers-color-scheme: dark) {
+  body.support-dark-mode {
+    background: #24292d;
+  }
 
-body.dark-mode,
-body.dark-mode .topic,
-body.dark-mode .message-footer,
-body.dark-mode .new-topic-wrapper > a,
-body.dark-mode .message-editor,
-body.dark-mode .new-topic-title,
-body.dark-mode .message > p > a,
-body.dark-mode .logo,
-body.dark-mode .simple-link:hover,
-body.dark-mode .flash,
-body.dark-mode .signup-form-label {
-  color: #ffffff;
-}
+  body.support-dark-mode,
+  body.support-dark-mode .topic,
+  body.support-dark-mode .message-footer,
+  body.support-dark-mode .new-topic-wrapper > a,
+  body.support-dark-mode .message-editor,
+  body.support-dark-mode .new-topic-title,
+  body.support-dark-mode .message > p > a,
+  body.support-dark-mode .logo,
+  body.support-dark-mode .simple-link:hover,
+  body.support-dark-mode .flash,
+  body.support-dark-mode .signup-form-label,
+  body.support-dark-mode .topic-title,
+  body.support-dark-mode .message-link {
+    color: #ffffff;
+  }
 
-body.dark-mode .topic:hover,
-body.dark-mode .message,
-body.dark-mode .topic-divider,
-body.dark-mode .new-topic-wrapper > a:hover,
-body.dark-mode .message-editor,
-body.dark-mode .simple-link:hover,
-body.dark-mode .divider,
-body.dark-mode .signup-form,
-body.dark-mode .new-topic-title,
-body.dark-mode .flash {
-  background: #1d2026;
-}
+  body.support-dark-mode .topic:hover,
+  body.support-dark-mode .message,
+  body.support-dark-mode .topic-divider,
+  body.support-dark-mode .new-topic-wrapper > a:hover,
+  body.support-dark-mode .message-editor,
+  body.support-dark-mode .simple-link:hover,
+  body.support-dark-mode .logo:hover,
+  body.support-dark-mode .divider,
+  body.support-dark-mode .signup-form,
+  body.support-dark-mode .new-topic-title,
+  body.support-dark-mode .flash {
+    background: #1d2026;
+  }
 
-body.dark-mode .topic:hover,
-body.dark-mode .message,
-body.dark-mode .topic-divider,
-body.dark-mode .new-topic-wrapper > a:hover,
-body.dark-mode .message-editor,
-body.dark-mode .message:not(:first-child):before,
-body.dark-mode .new-topic-title,
-body.dark-mode .topic-title h2,
-body.dark-mode .footer,
-body.dark-mode pre code,
-body.dark-mode .signup-form,
-body.dark-mode .signup-form-header,
-body.dark-mode .signup-form-color-section {
-  border-color: #141418;
-}
+  body.support-dark-mode .topic:hover,
+  body.support-dark-mode .message,
+  body.support-dark-mode .topic-divider,
+  body.support-dark-mode .new-topic-wrapper > a:hover,
+  body.support-dark-mode .message-editor,
+  body.support-dark-mode .message:not(:first-child):before,
+  body.support-dark-mode .new-topic-title,
+  body.support-dark-mode .topic-title h2,
+  body.support-dark-mode .footer,
+  body.support-dark-mode pre code,
+  body.support-dark-mode .signup-form,
+  body.support-dark-mode .signup-form-header,
+  body.support-dark-mode .signup-form-color-section {
+    border-color: #141418;
+  }
 
-body.dark-mode pre code {
-  background: #2b2e38;
+  body.support-dark-mode pre code {
+    background: #2b2e38;
+  }
+
+  body.support-dark-mode .message-link {
+    border-color: #fff;
+  }
 }
 
 .new-message-header {

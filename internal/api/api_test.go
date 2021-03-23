@@ -1,9 +1,12 @@
-package main
+package api
 
 import (
 	"errors"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
+	"github.com/jkulton/board/internal/models"
+	"github.com/jkulton/board/internal/session"
+	// "github.com/jkulton/board/internal/storage"
+	"github.com/jkulton/board/internal/templates"
 	"html/template"
 	"net/http"
 	"net/http/httptest"
@@ -12,54 +15,54 @@ import (
 )
 
 type MockStorage struct {
-	GetTopicFunc        func(id int) (*Topic, error)
-	GetRecentTopicsFunc func() ([]Topic, error)
-	CreateMessageFunc   func(m *Message) (*Message, error)
-	CreateTopicFunc     func(title string) (*Topic, error)
+	GetTopicFunc        func(id int) (*models.Topic, error)
+	GetRecentTopicsFunc func() ([]models.Topic, error)
+	CreateMessageFunc   func(m *models.Message) (*models.Message, error)
+	CreateTopicFunc     func(title string) (*models.Topic, error)
 }
 
-func (s *MockStorage) GetTopic(id int) (*Topic, error) {
+func (s *MockStorage) GetTopic(id int) (*models.Topic, error) {
 	return s.GetTopicFunc(id)
 }
 
-func (s *MockStorage) GetRecentTopics() ([]Topic, error) {
+func (s *MockStorage) GetRecentTopics() ([]models.Topic, error) {
 	return s.GetRecentTopicsFunc()
 }
 
-func (s *MockStorage) CreateMessage(m *Message) (*Message, error) {
+func (s *MockStorage) CreateMessage(m *models.Message) (*models.Message, error) {
 	return s.CreateMessageFunc(m)
 }
 
-func (s *MockStorage) CreateTopic(title string) (*Topic, error) {
+func (s *MockStorage) CreateTopic(title string) (*models.Topic, error) {
 	return s.CreateTopicFunc(title)
 }
 
 var (
-	session   *sessions.CookieStore
-	templates *template.Template
-	storage   MockStorage
-	s         TopicServer
+	testSession   *session.Session
+	testTemplates *template.Template
+	testStorage   MockStorage
+	api           TopicalAPI
 )
 
 func setupTests() {
-	session = sessions.NewCookieStore([]byte("test"))
-	templates = GenerateTemplates("views/*.gohtml")
-	storage = MockStorage{
-		GetTopicFunc: func(id int) (*Topic, error) {
-			return &Topic{ID: &id, Title: "First Title"}, nil
+	testSession = session.NewSession("test")
+	testTemplates = templates.GenerateTemplates("../../web/views/*.gohtml")
+	testStorage = MockStorage{
+		GetTopicFunc: func(id int) (*models.Topic, error) {
+			return &models.Topic{ID: &id, Title: "First Title"}, nil
 		},
-		GetRecentTopicsFunc: func() ([]Topic, error) {
-			return []Topic{}, nil
+		GetRecentTopicsFunc: func() ([]models.Topic, error) {
+			return []models.Topic{}, nil
 		},
-		CreateMessageFunc: func(m *Message) (*Message, error) {
+		CreateMessageFunc: func(m *models.Message) (*models.Message, error) {
 			return nil, nil
 		},
-		CreateTopicFunc: func(title string) (*Topic, error) {
+		CreateTopicFunc: func(title string) (*models.Topic, error) {
 			return nil, nil
 		},
 	}
 
-	s = TopicServer{templates, &storage, &Session{session}}
+	api = TopicalAPI{testTemplates, &testStorage, testSession}
 }
 
 func assertRedirect(location string, t *testing.T, res *httptest.ResponseRecorder) {
@@ -82,11 +85,11 @@ func TestTopicShow(t *testing.T) {
 		vars := map[string]string{"id": "12"}
 		req = mux.SetURLVars(req, vars)
 
-		storage.GetTopicFunc = func(id int) (*Topic, error) {
-			return &Topic{}, nil
+		testStorage.GetTopicFunc = func(id int) (*models.Topic, error) {
+			return &models.Topic{}, nil
 		}
 
-		s.TopicShow(res, req)
+		api.TopicShow(res, req)
 
 		assertRedirect("/topics", t, res)
 	})
@@ -98,7 +101,7 @@ func TestTopicShow(t *testing.T) {
 		vars := map[string]string{"id": "12"}
 		req = mux.SetURLVars(req, vars)
 
-		s.TopicShow(res, req)
+		api.TopicShow(res, req)
 
 		if strings.Contains(res.Body.String(), "<h2>First Title</h2>") == false {
 			t.Error("response body should include Topic title")
@@ -116,9 +119,9 @@ func TestTopicList(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/topics", nil)
 		res := httptest.NewRecorder()
 
-		s.session.SaveFlash("Important flash", req, res)
+		api.session.SaveFlash("Important flash", req, res)
 
-		s.TopicList(res, req)
+		api.TopicList(res, req)
 
 		if strings.Contains(res.Body.String(), "<section class=\"flash flash-error\">") == false {
 			t.Error("response body should include redirect found link")
@@ -130,11 +133,11 @@ func TestTopicList(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/topics/12", nil)
 		res := httptest.NewRecorder()
 
-		storage.GetRecentTopicsFunc = func() ([]Topic, error) {
-			return []Topic{{Title: "First list title"}, {Title: "Second list title"}}, nil
+		testStorage.GetRecentTopicsFunc = func() ([]models.Topic, error) {
+			return []models.Topic{{Title: "First list title"}, {Title: "Second list title"}}, nil
 		}
 
-		s.TopicList(res, req)
+		api.TopicList(res, req)
 
 		if strings.Contains(res.Body.String(), "First list title") == false {
 			t.Error("response body should include first list topic")
@@ -152,7 +155,7 @@ func TestMessageCreate(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/topics/3/messages", nil)
 		res := httptest.NewRecorder()
 
-		s.MessageCreate(res, req)
+		api.MessageCreate(res, req)
 
 		assertRedirect("/topics", t, res)
 	})
@@ -161,28 +164,28 @@ func TestMessageCreate(t *testing.T) {
 		setupTests()
 		req := httptest.NewRequest(http.MethodPost, "/topics/3/messages", nil)
 		res := httptest.NewRecorder()
-		s.session.SaveUser(&User{Initials: "AK", Theme: 3}, req, res)
+		api.session.SaveUser(&models.User{Initials: "AK", Theme: 3}, req, res)
 		vars := map[string]string{"id": "3"}
 		req = mux.SetURLVars(req, vars)
 
-		storage.CreateMessageFunc = func(m *Message) (*Message, error) {
+		testStorage.CreateMessageFunc = func(m *models.Message) (*models.Message, error) {
 			return nil, errors.New("something went wrong")
 		}
 
-		s.MessageCreate(res, req)
+		api.MessageCreate(res, req)
 
-		assertRedirect("/topics", t, res)
+		assertRedirect("/topics/3", t, res)
 	})
 
 	t.Run("success", func(t *testing.T) {
 		setupTests()
 		req := httptest.NewRequest(http.MethodPost, "/topics/3/messages", nil)
 		res := httptest.NewRecorder()
-		s.session.SaveUser(&User{Initials: "AK", Theme: 3}, req, res)
+		api.session.SaveUser(&models.User{Initials: "AK", Theme: 3}, req, res)
 		vars := map[string]string{"id": "3"}
 		req = mux.SetURLVars(req, vars)
 
-		s.MessageCreate(res, req)
+		api.MessageCreate(res, req)
 
 		assertRedirect("/topics/3", t, res)
 	})
@@ -194,7 +197,7 @@ func TestTopicNew(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/topics/new", nil)
 		res := httptest.NewRecorder()
 
-		s.TopicNew(res, req)
+		api.TopicNew(res, req)
 
 		assertRedirect("/topics", t, res)
 	})
@@ -203,11 +206,11 @@ func TestTopicNew(t *testing.T) {
 		setupTests()
 		req := httptest.NewRequest(http.MethodGet, "/topics/new", nil)
 		res := httptest.NewRecorder()
-		s.session.SaveUser(&User{Initials: "AK", Theme: 3}, req, res)
+		api.session.SaveUser(&models.User{Initials: "AK", Theme: 3}, req, res)
 
-		s.TopicNew(res, req)
+		api.TopicNew(res, req)
 
-		if strings.Contains(res.Body.String(), "<section class=\"new-message-header\">") == false {
+		if strings.Contains(res.Body.String(), "<form class=\"new-message-form") == false {
 			t.Error("response body should include new topic form")
 		}
 	})
@@ -219,7 +222,7 @@ func TestTopicCreate(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/topics/new", nil)
 		res := httptest.NewRecorder()
 
-		s.TopicCreate(res, req)
+		api.TopicCreate(res, req)
 
 		assertRedirect("/topics", t, res)
 	})
@@ -228,14 +231,14 @@ func TestTopicCreate(t *testing.T) {
 		setupTests()
 		req := httptest.NewRequest(http.MethodPost, "/topics/new?title=Birdwatchig+tips&content=check+it+out", nil)
 		res := httptest.NewRecorder()
-		s.session.SaveUser(&User{Initials: "AK", Theme: 3}, req, res)
+		api.session.SaveUser(&models.User{Initials: "AK", Theme: 3}, req, res)
 		topicID := 321
 
-		storage.CreateTopicFunc = func(title string) (*Topic, error) {
-			return &Topic{ID: &topicID, Title: title, Messages: &[]Message{}}, nil
+		testStorage.CreateTopicFunc = func(title string) (*models.Topic, error) {
+			return &models.Topic{ID: &topicID, Title: title, Messages: &[]models.Message{}}, nil
 		}
 
-		s.TopicCreate(res, req)
+		api.TopicCreate(res, req)
 
 		assertRedirect("/topics/321", t, res)
 	})
@@ -246,9 +249,9 @@ func TestJoinShow(t *testing.T) {
 		setupTests()
 		req := httptest.NewRequest(http.MethodGet, "/join", nil)
 		res := httptest.NewRecorder()
-		s.session.SaveUser(&User{Initials: "AK", Theme: 3}, req, res)
+		api.session.SaveUser(&models.User{Initials: "AK", Theme: 3}, req, res)
 
-		s.JoinShow(res, req)
+		api.JoinShow(res, req)
 
 		assertRedirect("/topics", t, res)
 	})
@@ -258,7 +261,7 @@ func TestJoinShow(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/join", nil)
 		res := httptest.NewRecorder()
 
-		s.JoinShow(res, req)
+		api.JoinShow(res, req)
 
 		if strings.Contains(res.Body.String(), "Join the conversation.") == false {
 			t.Error("response body should include join page")
@@ -272,9 +275,9 @@ func TestJoinCreate(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/join?initials=ABC&theme=1", nil)
 		res := httptest.NewRecorder()
 
-		s.JoinCreate(res, req)
+		api.JoinCreate(res, req)
 
-		user, _ := s.session.GetUser(req)
+		user, _ := api.session.GetUser(req)
 
 		if user != nil {
 			t.Error("user should not have been set")
@@ -288,9 +291,9 @@ func TestJoinCreate(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/join?initials=AK&theme=3", nil)
 		res := httptest.NewRecorder()
 
-		s.JoinCreate(res, req)
+		api.JoinCreate(res, req)
 
-		user, _ := s.session.GetUser(req)
+		user, _ := api.session.GetUser(req)
 
 		if user.Initials != "AK" {
 			t.Error("user should have been set to correct value")

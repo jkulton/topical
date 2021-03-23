@@ -1,16 +1,17 @@
-package main
+package session
 
 import (
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/sessions"
+	"github.com/jkulton/board/internal/models"
 	"log"
 	"net/http"
 )
 
 type TopicalSession interface {
-	GetUser(r *http.Request) (*User, error)
-	SaveUser(u *User, r *http.Request, w http.ResponseWriter) error
+	GetUser(r *http.Request) (*models.User, error)
+	SaveUser(u *models.User, r *http.Request, w http.ResponseWriter) error
 	SaveFlash(message string, r *http.Request, w http.ResponseWriter) error
 	GetFlashes(r *http.Request, w http.ResponseWriter) ([]string, error)
 }
@@ -21,18 +22,16 @@ type Session struct {
 	session *sessions.CookieStore
 }
 
-// User is a struct representing a user account, the user stored
-// in a simple cookie and defines a name and theme for messages.
-type User struct {
-	Initials string
-	Theme    int
+func NewSession(sessionKey string) *Session {
+	s := sessions.NewCookieStore([]byte(sessionKey))
+	return &Session{s}
 }
 
 // GetUser returns the the User from the session, if present
-func (s *Session) GetUser(r *http.Request) (*User, error) {
-	session, _ := s.session.Get(r, "u")
+func (s *Session) GetUser(r *http.Request) (*models.User, error) {
+	session, _ := s.session.Get(r, "s")
 	val := session.Values["user"]
-	var u *User
+	var u *models.User
 
 	if val == nil {
 		return nil, errors.New("User not found")
@@ -43,8 +42,8 @@ func (s *Session) GetUser(r *http.Request) (*User, error) {
 }
 
 // SaveUser saves a user to the session
-func (s *Session) SaveUser(u *User, r *http.Request, w http.ResponseWriter) error {
-	session, _ := s.session.Get(r, "u")
+func (s *Session) SaveUser(u *models.User, r *http.Request, w http.ResponseWriter) error {
+	session, _ := s.session.Get(r, "s")
 	j, err := json.Marshal(u)
 
 	if err != nil {
@@ -62,14 +61,10 @@ func (s *Session) SaveUser(u *User, r *http.Request, w http.ResponseWriter) erro
 
 // SaveFlash saves a flash message to the session
 func (s *Session) SaveFlash(message string, r *http.Request, w http.ResponseWriter) error {
-	session, err := s.session.Get(r, "flashes")
-
-	if err != nil {
-		return err
-	}
-
+	session, _ := s.session.Get(r, "s")
 	session.AddFlash(message)
-	err = session.Save(r, w)
+
+	err := session.Save(r, w)
 
 	if err != nil {
 		log.Print(err.Error())
@@ -82,7 +77,7 @@ func (s *Session) SaveFlash(message string, r *http.Request, w http.ResponseWrit
 // GetFlashes returns all flash messages stored in the session.
 // Note that the way flash messages work they are deleted after being retrieved.
 func (s *Session) GetFlashes(r *http.Request, w http.ResponseWriter) ([]string, error) {
-	session, _ := s.session.Get(r, "flashes")
+	session, _ := s.session.Get(r, "s")
 	flashStrings := []string{}
 	flashes := session.Flashes()
 
