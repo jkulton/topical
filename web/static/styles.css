@@ -469,8 +469,10 @@ label.purple > span { background: #673ab7; }
     border-color: #141418;
   }
 
-  body.support-dark-mode pre code {
+  body.support-dark-mode pre code,
+  body.support-dark-mode p > code {
     background: #2b2e38;
+    color: #9cc8f5;
   }
 
   body.support-dark-mode .message-link {
