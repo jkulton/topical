@@ -8,9 +8,7 @@ Topical is a (very) minimalist message board built with Golang.
 
 Users can create topics and reply with mesages. Users need only to pick an avatar color and two initials to get a signature and start posting.
 
-Topical even supports **dark mode**. 😍
-
-Topical uses the preferred color scheme from your OS settings to decide which theme to display (update your OS setting to see!)
+Topical even supports **dark mode**. The preferred color scheme from your OS settings is used to decide which theme to display (update your OS setting to see!).
 
 ## Running Topical
 
