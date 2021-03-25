@@ -5,11 +5,12 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // JoinCreate accepts a payload of user info and saves the user in a session
 func (t *TopicalAPI) JoinCreate(w http.ResponseWriter, r *http.Request) {
-	initials := r.FormValue("initials")
+	initials := strings.ToUpper(r.FormValue("initials"))
 	matched, err := regexp.Match("^[A-Z]{2}$", []byte(initials))
 
 	if err != nil {
@@ -27,7 +28,7 @@ func (t *TopicalAPI) JoinCreate(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	u := &models.User{initials, theme}
+	u := &models.User{Initials: initials, Theme: theme}
 
 	if err := t.session.SaveUser(u, r, w); err != nil {
 		panic(err)

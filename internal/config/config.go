@@ -23,8 +23,8 @@ func ParseAppConfig() AppConfig {
 		"            | |                  \n" +
 		"            |_|\n\n")
 
-	port := flag.Int("p", envOrInt("APP_PORT", 8080), "port for app on run on")
-	dbConnectionURI := flag.String("db-connection-uri", envOrString("DB_CONNECTION_URI", "not-set"), "URI-formatted Postgres connection information (e.g. postgresql://localhost:5433...)")
+	port := flag.Int("p", envOrInt("PORT", 8080), "port for app on run on")
+	dbConnectionURI := flag.String("db-connection-uri", envOrString("DATABASE_URL", "not-set"), "URI-formatted Postgres connection information (e.g. postgresql://localhost:5433...)")
 	sessionKey := flag.String("session-key", envOrString("SESSION_KEY", "not-set"), "session key for cookie store")
 
 	flag.Parse()
