@@ -11,7 +11,6 @@ func (api *TopicalAPI) TopicNew(w http.ResponseWriter, r *http.Request) {
 	user, err := api.session.GetUser(r)
 
 	if err != nil {
-		// log.Print("User does not exist, redirecting home")
 		api.session.SaveFlash("Log in to post a message", r, w)
 		http.Redirect(w, r, "/topics", 302)
 		return

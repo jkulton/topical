@@ -25,7 +25,9 @@ func (api *TopicalAPI) MessageCreate(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Print("Error parsing route id")
-		log.Panic(err)
+		log.Print(err.Error())
+		api.templates.ExecuteTemplate(w, "error", nil)
+		return
 	}
 
 	content := strings.TrimSpace(r.FormValue("content"))
@@ -46,7 +48,6 @@ func (api *TopicalAPI) MessageCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := api.storage.CreateMessage(&message); err != nil {
-		// log.Print(err.Error())
 		api.session.SaveFlash("Error creating message", r, w)
 		http.Redirect(w, r, "/topics", 302)
 		return

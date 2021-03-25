@@ -62,7 +62,9 @@ func (t *Storage) GetTopic(id int) (*models.Topic, error) {
 		topic.Title = title
 
 		if err := goldmark.Convert([]byte(content), &unsafeHTML); err != nil {
-			panic(err)
+			log.Print("Error parsing markdown")
+			log.Print(err.Error())
+			return nil, err
 		}
 		safeHTML := bluemonday.UGCPolicy().SanitizeBytes(unsafeHTML.Bytes())
 
@@ -76,7 +78,8 @@ func (t *Storage) GetTopic(id int) (*models.Topic, error) {
 	}
 
 	if err = rows.Err(); err != nil {
-		log.Fatal(err)
+		log.Print("Error querying for messages")
+		log.Print(err.Error())
 		return nil, err
 	}
 

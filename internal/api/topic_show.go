@@ -16,14 +16,18 @@ func (api *TopicalAPI) TopicShow(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Print("Error parsing route id")
-		log.Panic(err)
+		log.Print(err.Error())
+		api.templates.ExecuteTemplate(w, "error", nil)
+		return
 	}
 
 	topic, err := api.storage.GetTopic(id)
 
 	if err != nil {
-		log.Print("Error calling getTopic")
-		log.Panic(err)
+		log.Print("Error getting topic")
+		log.Print(err.Error())
+		api.templates.ExecuteTemplate(w, "error", nil)
+		return
 	}
 
 	if topic.ID == nil {

@@ -13,8 +13,10 @@ func (api *TopicalAPI) TopicList(w http.ResponseWriter, r *http.Request) {
 	topics, err := api.storage.GetRecentTopics()
 
 	if err != nil {
-		log.Print("Error calling getRecentTopics")
-		log.Panic(err)
+		log.Print("Error getting recent topics")
+		log.Print(err.Error())
+		api.templates.ExecuteTemplate(w, "error", nil)
+		return
 	}
 
 	payload := struct {
