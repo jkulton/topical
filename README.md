@@ -39,6 +39,34 @@ You can change Topical's code locally and re-run the `go run` command to restart
 - Run tests by executing `go test ./...`.
 - You can also get coverage information with the `-cover` flag (`go test ./... -cover`)
 
+### Options/Flags
+
+Topical supports passing options via flag at start up or through an accompanying environment variable. Flag will take precedence over the environment variables, if provided.
+
+| Flag | ENV var | Default Fallback | Description |
+|------|---------|---------|-------------|
+| `-p 8080` | `PORT` | `8000`  | Port for Topical to bind to |
+| `-database-url` | `DATABASE_URL` | `'non-set'` | URI-formatted Postgres connection information (e.g. `postgresql://localhost:5433...`) |
+| `-session-key` | `SESSION_KEY` | `'not-set'` | session key for cookie store |
+
+### Database Management
+
+A few DB management scripts have been provided and will accomplish the following tasks:
+
+| Script | Use |
+|--------|-----|
+| `db_init` | Creates the intial tables in the DB as specified in `./schema.sql` |
+| `db_seed` | Seeds an existing database with data from `./seeds.sql` |
+| `db_drop` | Drops tables from a Topical database |
+| `db_reset` | Drops tables, creates tables, reseeds database |
+
+Scripts can be run using the following signature:
+
+```sh
+go run ./scripts/db_init \
+  -database-url='postgresql://topical:topical@localhost?sslmode=disable'
+```
+
 ---
 
 ## Deploying to Heroku
