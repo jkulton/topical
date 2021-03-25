@@ -20,7 +20,7 @@
               <span class="user-logo theme-{{.AuthorTheme}}">
                 {{ .AuthorInitials }}
               </span>
-              <a class="message-link" href="#message-{{.ID}}">{{ .Posted.Format "Jan 02, 2006 @ 3:05PM" }}</a>
+              <a class="message-link" href="#message-{{.ID}}">posted {{ .Posted.Format "Jan 02, 2006" }}</a>
             </span>
           </section>
         {{ end }}
