@@ -2,9 +2,13 @@
 
 # Topical
 
-A (very) minimalist message board
+[Live Demo](https://topical-go.herokuapp.com/)
 
-## Run Locally
+Topical is a (very) minimalist message board built with Golang and a few external dependencies.
+
+Users can post topics and reply with mesages. Users "sign up" by storing a cookie associated with their favorite color and two initials in their browser. The user can then post on the message board and their messages will be tied to this signature. The messages are persisted to a Postgres database.
+
+## Running Locally
 
 The simplest way to run Topical is using Docker. Please ensure you have both Docker and Docker Compose installed, then do the following:
 
@@ -60,7 +64,7 @@ A few DB management scripts have been provided and will accomplish the following
 | `db_drop` | Drops tables from a Topical database |
 | `db_reset` | Drops tables, creates tables, reseeds database |
 
-Scripts can be run using the following signature:
+Scripts can be run directly with `go run` but require passing a `-database-url` (if the environment variable is not set):
 
 ```sh
 go run ./scripts/db_init \
