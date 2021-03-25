@@ -70,25 +70,3 @@ Scripts can be run directly with `go run` but require passing a `-database-url` 
 go run ./scripts/db_init \
   -database-url='postgresql://topical:topical@localhost?sslmode=disable'
 ```
-
----
-
-## Deploying to Heroku
-
-(Heroku steps current as-of early 2021)
-
-1. In the Heroku web interface create a new app
-2. Navigate to the "Resources" tab for the app and add the "Heroku Postgres" add-on (Free Hobby plan works fine)
-3. Navigate to the "Settings" tab for the app, click "Reveal Config Vars" and add a new var with the key `SESSION_KEY` and a "sufficiently random" value (see [mux/sessions](https://pkg.go.dev/github.com/gorilla/sessions) for what this means)
-4. Clone this repo locally
-5. In the repo run `heroku git:remote -a YOUR_APP_NAME` where `YOUR_APP_NAME` is the name you chose in Step 1.
-6. Commit and push the local code:
-```sh
-$ git add .
-$ git commit -am "make it better"
-$ git push heroku master
-```
-7. Wait for the Heroku build process to complete.
-8. Navigate to the Heroku URL for your app. Done!
-
-Note that the Docker Compose file in this directory should not be used for deployment on any platform as it defines the database and app session secret using dummy local values.
