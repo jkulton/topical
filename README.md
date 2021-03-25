@@ -8,6 +8,10 @@ Topical is a (very) minimalist message board built with Golang and a few externa
 
 Users can post topics and reply with mesages. Users "sign up" by storing a cookie associated with their favorite color and two initials in their browser. The user can then post on the message board and their messages will be tied to this signature. The messages are persisted to a Postgres database.
 
+Yes, we even support **dark mode**.
+
+Topical uses the preferred color scheme from your OS settings to decide which theme to display (try changing your setting to see!)
+
 ## Running Topical
 
 The simplest way to run Topical is using Docker. Please ensure you have both Docker and Docker Compose installed, then do the following:
