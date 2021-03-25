@@ -4,26 +4,22 @@
 
 A (very) minimalist message board
 
-## Running Topical
+---
 
-There are a few usecases where you might want to run Topical, here they are:
+## Run Locally
 
-- **Run Locally** (run Topical locally just to try it out)
-- **Development** (you want to play with Topical's code and run it locally)
-- **Deploy** (you want to deploy Topical for extended use)
-
-### Run Locally
-
-The easiest way to run Topical locally is using Docker. Please make sure you have both Docker and Docker Compose installed, then do the following from the command line:
+The simplest way to run Topical is using Docker. Please ensure you have both Docker and Docker Compose installed, then do the following:
 
 1. Clone this repo
 2. Navigate into the repo
 3. Run `docker-compose up`
 4. Navigate to `localhost:8000` in your browser. Done!
 
-### Development
+---
 
-In order to edit Topical's code and then build the app please ensure you have Docker, Docker Compose, and Go installed. Then, do the following:
+## Development
+
+Please ensure you have both Docker and Docker Compose installed, then do the following:
 
 1. Clone this repo
 2. Navigate into the repo
@@ -40,12 +36,14 @@ go run ./cmd/topical \
 
 You can change Topical's code locally and re-run the `go run` command to restart the server.
 
-#### Running Tests
+### Running Tests
 
 - Run tests by executing `go test ./...`.
 - You can also get coverage information with the `-cover` flag (`go test ./... -cover`)
 
-### Deploying to Heroku
+---
+
+## Deploying to Heroku
 
 (Heroku steps current as-of early 2021)
 
