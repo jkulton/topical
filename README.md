@@ -49,8 +49,8 @@ Topical supports passing options via flag at start up or through an accompanying
 
 | Flag | ENV var | Default Fallback | Description |
 |------|---------|---------|-------------|
-| `-p 8080` | `PORT` | `8000`  | Port for Topical to bind to |
-| `-database-url` | `DATABASE_URL` | `'non-set'` | URI-formatted Postgres connection information (e.g. `postgresql://localhost:5433...`) |
+| `-p` | `PORT` | `8000`  | Port for Topical to bind to |
+| `-database-url` | `DATABASE_URL` | `'not-set'` | URI-formatted Postgres connection information (e.g. `postgresql://localhost:5433...`) |
 | `-session-key` | `SESSION_KEY` | `'not-set'` | session key for cookie store |
 
 ### Database Management
