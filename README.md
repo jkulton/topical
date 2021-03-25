@@ -8,7 +8,7 @@ Topical is a (very) minimalist message board built with Golang and a few externa
 
 Users can post topics and reply with mesages. Users "sign up" by storing a cookie associated with their favorite color and two initials in their browser. The user can then post on the message board and their messages will be tied to this signature. The messages are persisted to a Postgres database.
 
-## Running Locally
+## Running Topical
 
 The simplest way to run Topical is using Docker. Please ensure you have both Docker and Docker Compose installed, then do the following:
 
@@ -26,7 +26,7 @@ Please ensure you have both Docker and Docker Compose installed, then do the fol
 1. Clone this repo
 2. Navigate into the repo
 3. Run `docker-compose up db`
-4. In another terminal window, also in the repo's directory run:
+4. In another terminal window, in the repo directory also run:
 
 ```
 go run ./cmd/topical \
@@ -45,13 +45,13 @@ You can change Topical's code locally and re-run the `go run` command to restart
 
 ### Options/Flags
 
-Topical supports passing options via flag at start up or through an accompanying environment variable. Flag will take precedence over the environment variables, if provided.
+Topical supports passing options via flag at start up or through an accompanying environment variable. Flags will take precedence over environment variables, if provided.
 
 | Flag | ENV var | Default Fallback | Description |
 |------|---------|---------|-------------|
 | `-p` | `PORT` | `8000`  | Port for Topical to bind to |
 | `-database-url` | `DATABASE_URL` | `'not-set'` | URI-formatted Postgres connection information (e.g. `postgresql://localhost:5433...`) |
-| `-session-key` | `SESSION_KEY` | `'not-set'` | session key for cookie store |
+| `-session-key` | `SESSION_KEY` | `'not-set'` | Session key for cookie store |
 
 ### Database Management
 
