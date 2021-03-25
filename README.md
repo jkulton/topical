@@ -1,16 +1,16 @@
-![Topical Banner](./assets/banner.png)
+![topical-banner-lg](https://user-images.githubusercontent.com/6694167/112412673-4b1d0000-8cf5-11eb-9a38-bfa0d41a227e.png)
 
 # Topical
 
 [Live Demo](https://topical-go.herokuapp.com/)
 
-Topical is a (very) minimalist message board built with Golang and a few external dependencies.
+Topical is a (very) minimalist message board built with Golang.
 
-Users can post topics and reply with mesages. Users "sign up" by storing a cookie associated with their favorite color and two initials in their browser. The user can then post on the message board and their messages will be tied to this signature. The messages are persisted to a Postgres database.
+Users can create topics and reply with mesages. Users need only to pick an avatar color and two initials to get a signature and start posting.
 
-Yes, we even support **dark mode**.
+Topical even supports **dark mode**. 😍
 
-Topical uses the preferred color scheme from your OS settings to decide which theme to display (try changing your setting to see!)
+Topical uses the preferred color scheme from your OS settings to decide which theme to display (update your OS setting to see!)
 
 ## Running Topical
 
