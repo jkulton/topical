@@ -26,6 +26,9 @@ platter
 ```
 
 to serve your current working directory over HTTP.', '2021-03-24 12:30:00'),
+       (1, 'GM', 7, 'I''ve used that app a couple of times and it worked well for me.
+
+In my case I just needed a utility to serve some HTML files over my local network. This turned out to be a perfect fit and I didn''t even have to configure anything.', '2021-03-24 12:45:00'),
        (2, 'YM', 3, 'Check out this [Instrumental Lofi playlist on Spotify](https://open.spotify.com/user/spotify/playlist/37i9dQZF1DXc8kgYqQLMfH?si=IfYoL7gyTp-75RCbeEc_9A).
 I''ve been digging so many songs off this.', '2021-03-23 12:30:00'),
        (2, 'JK', 1, 'I LOVE THIS. Thanks for sharing!', '2021-03-23 12:55:00'),
