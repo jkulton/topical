@@ -424,6 +424,7 @@ label.purple > span { background: #673ab7; }
   }
 
   body.support-dark-mode,
+  body.support-dark-mode a:visited,
   body.support-dark-mode .topic,
   body.support-dark-mode .message-footer,
   body.support-dark-mode .new-topic-wrapper > a,

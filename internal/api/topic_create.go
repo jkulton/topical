@@ -13,7 +13,6 @@ func (api *TopicalAPI) TopicCreate(w http.ResponseWriter, r *http.Request) {
 	user, err := api.session.GetUser(r)
 
 	if err != nil {
-		// log.Print("User does not exist, redirecting home")
 		api.session.SaveFlash("Log in to post a topic", r, w)
 		http.Redirect(w, r, "/topics", 302)
 		return
@@ -31,8 +30,10 @@ func (api *TopicalAPI) TopicCreate(w http.ResponseWriter, r *http.Request) {
 	topic, err := api.storage.CreateTopic(title)
 
 	if err != nil {
-		log.Println("CreateTopic error")
-		log.Println(err.Error())
+		log.Print("Error creating topic")
+		log.Print(err.Error())
+		api.templates.ExecuteTemplate(w, "error", nil)
+		return
 	}
 
 	message := models.Message{
@@ -45,8 +46,10 @@ func (api *TopicalAPI) TopicCreate(w http.ResponseWriter, r *http.Request) {
 	_, err = api.storage.CreateMessage(&message)
 
 	if err != nil {
-		log.Println(err.Error())
-		log.Panic(err)
+		log.Print("Error creating message")
+		log.Print(err.Error())
+		api.templates.ExecuteTemplate(w, "error", nil)
+		return
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("/topics/%d", *topic.ID), 302)

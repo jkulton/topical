@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/jkulton/topical/internal/models"
+	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -14,7 +15,9 @@ func (t *TopicalAPI) JoinCreate(w http.ResponseWriter, r *http.Request) {
 	matched, err := regexp.Match("^[A-Z]{2}$", []byte(initials))
 
 	if err != nil {
-		panic(err)
+		log.Print("Error creating user")
+		log.Print(err.Error())
+		http.Redirect(w, r, "/join", 302)
 	}
 
 	if matched == false {
@@ -25,13 +28,19 @@ func (t *TopicalAPI) JoinCreate(w http.ResponseWriter, r *http.Request) {
 	theme, err := strconv.Atoi(r.FormValue("theme"))
 
 	if err != nil {
-		panic(err)
+		log.Print("Error creating user")
+		log.Print(err.Error())
+		http.Redirect(w, r, "/join", 302)
+		return
 	}
 
 	u := &models.User{Initials: initials, Theme: theme}
 
 	if err := t.session.SaveUser(u, r, w); err != nil {
-		panic(err)
+		log.Print("Error creating user")
+		log.Print(err.Error())
+		http.Redirect(w, r, "/join", 302)
+		return
 	}
 
 	http.Redirect(w, r, "/topics", 302)
