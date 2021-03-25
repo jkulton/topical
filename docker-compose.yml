@@ -1,11 +1,22 @@
 version: '3'
 services:
-  postgres:
+  topical:
+    environment:
+      - DATABASE_URL=postgresql://topical:topical@db?sslmode=disable
+      - SESSION_KEY=SOMETHING_SECRET
+    image: golang:1.14-alpine
+    volumes:
+      - .:/go/src/topical
+    working_dir: /go/src/topical
+    command: go run ./cmd/topical
+    ports:
+      - "8000:8000"
+  db:
     image: "postgres:13.2"
     environment:
-      POSTGRES_DB: topical
-      POSTGRES_USER: topical
-      POSTGRES_PASSWORD: examplepassword
+      - POSTGRES_DB=topical
+      - POSTGRES_USER=topical
+      - POSTGRES_PASSWORD=topical
     ports:
       - "5432:5432"
     volumes:
