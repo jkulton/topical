@@ -45,7 +45,7 @@ var (
 
 func setupTests() {
 	testSession = session.NewSession("test")
-	testTemplates = templates.GenerateTemplates("../../web/views/*.gohtml")
+	testTemplates, _ = templates.GenerateTemplates("../../web/views/*.gohtml")
 	testStorage = MockStorage{
 		GetTopicFunc: func(id int) (*models.Topic, error) {
 			return &models.Topic{ID: &id, Title: "First Title"}, nil
