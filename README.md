@@ -42,8 +42,9 @@ You can change Topical's code locally and re-run the `go run` command to restart
 
 ### Running Tests
 
-- Run tests by executing `go test ./...`.
+- Run tests by executing `go test ./internal/...`.
 - You can also get coverage information with the `-cover` flag (`go test ./... -cover`)
+- **Note:** Integration-style tests may take longer to execute than unit tests as they involve setup and teardown phases.
 
 ### Options/Flags
 
