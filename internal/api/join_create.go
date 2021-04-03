@@ -15,8 +15,7 @@ func (t *TopicalAPI) JoinCreate(w http.ResponseWriter, r *http.Request) {
 	matched, err := regexp.Match("^[A-Z]{2}$", []byte(initials))
 
 	if err != nil {
-		log.Print("Error creating user")
-		log.Print(err.Error())
+		log.Print("Error creating user", err.Error())
 		http.Redirect(w, r, "/join", 302)
 	}
 
@@ -28,8 +27,7 @@ func (t *TopicalAPI) JoinCreate(w http.ResponseWriter, r *http.Request) {
 	theme, err := strconv.Atoi(r.FormValue("theme"))
 
 	if err != nil {
-		log.Print("Error creating user")
-		log.Print(err.Error())
+		log.Print("Error creating user", err.Error())
 		http.Redirect(w, r, "/join", 302)
 		return
 	}
@@ -37,8 +35,7 @@ func (t *TopicalAPI) JoinCreate(w http.ResponseWriter, r *http.Request) {
 	u := &models.User{Initials: initials, Theme: theme}
 
 	if err := t.session.SaveUser(u, r, w); err != nil {
-		log.Print("Error creating user")
-		log.Print(err.Error())
+		log.Print("Error creating user", err.Error())
 		http.Redirect(w, r, "/join", 302)
 		return
 	}

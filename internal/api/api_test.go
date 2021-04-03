@@ -93,6 +93,38 @@ func TestTopicShow(t *testing.T) {
 		assertRedirect("/topics", t, res)
 	})
 
+	t.Run("renders error page if parsing route id error", func(t *testing.T) {
+		setupTests()
+		req := httptest.NewRequest(http.MethodGet, "/topics/12", nil)
+		res := httptest.NewRecorder()
+		vars := map[string]string{"id": "abc"}
+		req = mux.SetURLVars(req, vars)
+
+		api.TopicShow(res, req)
+
+		if strings.Contains(res.Body.String(), "Uh oh. Something went wrong.") == false {
+			t.Error("response body should include error page")
+		}
+	})
+
+	t.Run("renders error page on get topic error", func(t *testing.T) {
+		setupTests()
+		req := httptest.NewRequest(http.MethodGet, "/topics/12", nil)
+		res := httptest.NewRecorder()
+		vars := map[string]string{"id": "12"}
+		req = mux.SetURLVars(req, vars)
+
+		testStorage.GetTopicFunc = func(id int) (*models.Topic, error) {
+			return nil, errors.New("get topic error")
+		}
+
+		api.TopicShow(res, req)
+
+		if strings.Contains(res.Body.String(), "Uh oh. Something went wrong.") == false {
+			t.Error("response body should include error page")
+		}
+	})
+
 	t.Run("renders topic successfully", func(t *testing.T) {
 		setupTests()
 		req := httptest.NewRequest(http.MethodGet, "/topics/12", nil)
@@ -124,6 +156,22 @@ func TestTopicList(t *testing.T) {
 
 		if strings.Contains(res.Body.String(), "<section class=\"flash flash-error\">") == false {
 			t.Error("response body should include redirect found link")
+		}
+	})
+
+	t.Run("renders error page if getting recent topics reutrns error", func(t *testing.T) {
+		setupTests()
+		req := httptest.NewRequest(http.MethodGet, "/topics/12", nil)
+		res := httptest.NewRecorder()
+
+		testStorage.GetRecentTopicsFunc = func() ([]models.Topic, error) {
+			return nil, errors.New("get recent topics error")
+		}
+
+		api.TopicList(res, req)
+
+		if strings.Contains(res.Body.String(), "Uh oh. Something went wrong.") == false {
+			t.Error("response body should include error page")
 		}
 	})
 
@@ -159,9 +207,24 @@ func TestMessageCreate(t *testing.T) {
 		assertRedirect("/topics", t, res)
 	})
 
+	t.Run("responds with 302 to error page if parsing route id fails", func(t *testing.T) {
+		setupTests()
+		req := httptest.NewRequest(http.MethodPost, "/topics/abc/messages", nil)
+		res := httptest.NewRecorder()
+		api.session.SaveUser(&models.User{Initials: "AK", Theme: 3}, req, res)
+		vars := map[string]string{"id": "abc"}
+		req = mux.SetURLVars(req, vars)
+
+		api.MessageCreate(res, req)
+
+		if strings.Contains(res.Body.String(), "Uh oh. Something went wrong.") == false {
+			t.Error("response body should include error page")
+		}
+	})
+
 	t.Run("responds with 302 to dashboard if saving message fails", func(t *testing.T) {
 		setupTests()
-		req := httptest.NewRequest(http.MethodPost, "/topics/3/messages", nil)
+		req := httptest.NewRequest(http.MethodPost, "/topics/3/messages?content=My+New+Message", nil)
 		res := httptest.NewRecorder()
 		api.session.SaveUser(&models.User{Initials: "AK", Theme: 3}, req, res)
 		vars := map[string]string{"id": "3"}
@@ -173,12 +236,12 @@ func TestMessageCreate(t *testing.T) {
 
 		api.MessageCreate(res, req)
 
-		assertRedirect("/topics/3", t, res)
+		assertRedirect("/topics", t, res)
 	})
 
 	t.Run("success", func(t *testing.T) {
 		setupTests()
-		req := httptest.NewRequest(http.MethodPost, "/topics/3/messages", nil)
+		req := httptest.NewRequest(http.MethodPost, "/topics/3/messages?content=My+New+Message", nil)
 		res := httptest.NewRecorder()
 		api.session.SaveUser(&models.User{Initials: "AK", Theme: 3}, req, res)
 		vars := map[string]string{"id": "3"}
@@ -226,7 +289,46 @@ func TestTopicCreate(t *testing.T) {
 		assertRedirect("/topics", t, res)
 	})
 
-	t.Run("responds with 302 to new topic on success", func(t *testing.T) {
+	t.Run("responds with error page if creating topic returns error", func(t *testing.T) {
+		setupTests()
+		req := httptest.NewRequest(http.MethodPost, "/topics/new?title=Birdwatchig+tips&content=check+it+out", nil)
+		res := httptest.NewRecorder()
+		api.session.SaveUser(&models.User{Initials: "AK", Theme: 3}, req, res)
+
+		testStorage.CreateTopicFunc = func(title string) (*models.Topic, error) {
+			return nil, errors.New("something went wrong creating topic")
+		}
+
+		api.TopicCreate(res, req)
+
+		if strings.Contains(res.Body.String(), "Uh oh. Something went wrong.") == false {
+			t.Error("response body should include error page")
+		}
+	})
+
+	t.Run("responds with error page if creating message returns error", func(t *testing.T) {
+		setupTests()
+		req := httptest.NewRequest(http.MethodPost, "/topics/new?title=Birdwatchig+tips&content=check+it+out", nil)
+		res := httptest.NewRecorder()
+		api.session.SaveUser(&models.User{Initials: "AK", Theme: 3}, req, res)
+		topicID := 321
+
+		testStorage.CreateTopicFunc = func(title string) (*models.Topic, error) {
+			return &models.Topic{ID: &topicID, Title: title, Messages: &[]models.Message{}}, nil
+		}
+
+		testStorage.CreateMessageFunc = func(m *models.Message) (*models.Message, error) {
+			return nil, errors.New("something went wrong creating message")
+		}
+
+		api.TopicCreate(res, req)
+
+		if strings.Contains(res.Body.String(), "Uh oh. Something went wrong.") == false {
+			t.Error("response body should include error page")
+		}
+	})
+
+	t.Run("responds with 302 to newly created topic on success", func(t *testing.T) {
 		setupTests()
 		req := httptest.NewRequest(http.MethodPost, "/topics/new?title=Birdwatchig+tips&content=check+it+out", nil)
 		res := httptest.NewRecorder()
@@ -272,6 +374,22 @@ func TestJoinCreate(t *testing.T) {
 	t.Run("does not save user if user initials invalid", func(t *testing.T) {
 		setupTests()
 		req := httptest.NewRequest(http.MethodPost, "/join?initials=ABC&theme=1", nil)
+		res := httptest.NewRecorder()
+
+		api.JoinCreate(res, req)
+
+		user, _ := api.session.GetUser(req)
+
+		if user != nil {
+			t.Error("user should not have been set")
+		}
+
+		assertRedirect("/join", t, res)
+	})
+
+	t.Run("redirects back to join page if theme invalid", func(t *testing.T) {
+		setupTests()
+		req := httptest.NewRequest(http.MethodPost, "/join?initials=AK&theme=abc", nil)
 		res := httptest.NewRecorder()
 
 		api.JoinCreate(res, req)

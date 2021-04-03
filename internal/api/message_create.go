@@ -24,8 +24,7 @@ func (api *TopicalAPI) MessageCreate(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(vars["id"])
 
 	if err != nil {
-		log.Print("Error parsing route id")
-		log.Print(err.Error())
+		log.Print("Error parsing route id", err.Error())
 		api.templates.ExecuteTemplate(w, "error", nil)
 		return
 	}
