@@ -62,7 +62,6 @@ func (t *Storage) GetTopic(id int) (*models.Topic, error) {
 		topic.Title = title
 
 		if err := goldmark.Convert([]byte(content), &unsafeHTML); err != nil {
-			log.Print("Error parsing markdown")
 			log.Print(err.Error())
 			return nil, err
 		}
@@ -78,7 +77,6 @@ func (t *Storage) GetTopic(id int) (*models.Topic, error) {
 	}
 
 	if err = rows.Err(); err != nil {
-		log.Print("Error querying for messages")
 		log.Print(err.Error())
 		return nil, err
 	}
@@ -92,7 +90,7 @@ func (t *Storage) GetTopic(id int) (*models.Topic, error) {
 func (t *Storage) GetRecentTopics() ([]models.Topic, error) {
 	topics := []models.Topic{}
 	query := `
-		SELECT DISTINCT topics.*,
+		SELECT DISTINCT topics.id, topics.title,
 			(SELECT COUNT(messages.id) FROM messages WHERE topic_id = topics.id) AS "message_count",
 			(SELECT author_initials FROM messages WHERE topic_id = topics.id ORDER BY posted ASC LIMIT 1) AS "author_initials",
 			(SELECT author_theme FROM messages WHERE topic_id = topics.id ORDER BY posted ASC LIMIT 1) AS "author_theme",
@@ -140,7 +138,7 @@ func (t *Storage) GetRecentTopics() ([]models.Topic, error) {
 // CreateMessage inserts a message into the DB
 func (t *Storage) CreateMessage(m *models.Message) (*models.Message, error) {
 	sql := `INSERT INTO messages (topic_id, content, author_initials, author_theme) VALUES ($1, $2, $3, $4)`
-	_, err := t.db.Exec(sql, &m.TopicID, m.Content, m.AuthorInitials, m.AuthorTheme)
+	_, err := t.db.Exec(sql, *m.TopicID, m.Content, m.AuthorInitials, m.AuthorTheme)
 
 	if err != nil {
 		log.Print(err.Error())
