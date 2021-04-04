@@ -73,3 +73,4 @@ Scripts can be run directly with `go run` but require passing a `-database-url` 
 go run ./scripts/db_init \
   -database-url='postgresql://topical:topical@localhost?sslmode=disable'
 ```
+
