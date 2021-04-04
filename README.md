@@ -2,7 +2,7 @@
 
 # Topical
 
-[Live Demo](https://topical-go.herokuapp.com/)
+[Live Demo](https://topical-go.herokuapp.com/) (demo app DB resets daily)
 
 Topical is a (very) minimalist message board built with Golang.
 
