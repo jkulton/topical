@@ -30,8 +30,7 @@ func (api *TopicalAPI) TopicCreate(w http.ResponseWriter, r *http.Request) {
 	topic, err := api.storage.CreateTopic(title)
 
 	if err != nil {
-		log.Print("Error creating topic")
-		log.Print(err.Error())
+		log.Print("Error creating topic", err.Error())
 		api.templates.ExecuteTemplate(w, "error", nil)
 		return
 	}
@@ -46,8 +45,7 @@ func (api *TopicalAPI) TopicCreate(w http.ResponseWriter, r *http.Request) {
 	_, err = api.storage.CreateMessage(&message)
 
 	if err != nil {
-		log.Print("Error creating message")
-		log.Print(err.Error())
+		log.Print("Error creating message", err.Error())
 		api.templates.ExecuteTemplate(w, "error", nil)
 		return
 	}

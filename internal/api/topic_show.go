@@ -15,8 +15,7 @@ func (api *TopicalAPI) TopicShow(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 
 	if err != nil {
-		log.Print("Error parsing route id")
-		log.Print(err.Error())
+		log.Print("Error parsing route id", err.Error())
 		api.templates.ExecuteTemplate(w, "error", nil)
 		return
 	}
@@ -24,8 +23,7 @@ func (api *TopicalAPI) TopicShow(w http.ResponseWriter, r *http.Request) {
 	topic, err := api.storage.GetTopic(id)
 
 	if err != nil {
-		log.Print("Error getting topic")
-		log.Print(err.Error())
+		log.Print("Error getting topic", err.Error())
 		api.templates.ExecuteTemplate(w, "error", nil)
 		return
 	}

@@ -6,7 +6,7 @@ import (
 )
 
 // GenerateTemplates generates and returns templates instance
-func GenerateTemplates(templatesGlob string) *template.Template {
+func GenerateTemplates(templatesGlob string) (*template.Template, error) {
 	funcMap := template.FuncMap{
 		"noescape": func(str string) template.HTML { return template.HTML(str) },
 	}
@@ -15,8 +15,9 @@ func GenerateTemplates(templatesGlob string) *template.Template {
 
 	if err != nil {
 		log.Print("Error generating templates:")
-		panic(err)
+		log.Print(err)
+		return nil, err
 	}
 
-	return templates
+	return templates, nil
 }

@@ -28,7 +28,12 @@ func main() {
 
 	// Initialize session, HTML templates, and storage interface
 	session := session.NewSession(ac.SessionKey)
-	templates := templates.GenerateTemplates("./web/views/*.gohtml")
+	templates, err := templates.GenerateTemplates("./web/views/*.gohtml")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	storage := storage.New(db)
 
 	// Create API & router, register routes

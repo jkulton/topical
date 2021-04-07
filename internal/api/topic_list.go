@@ -13,8 +13,7 @@ func (api *TopicalAPI) TopicList(w http.ResponseWriter, r *http.Request) {
 	topics, err := api.storage.GetRecentTopics()
 
 	if err != nil {
-		log.Print("Error getting recent topics")
-		log.Print(err.Error())
+		log.Print("Error getting recent topics", err.Error())
 		api.templates.ExecuteTemplate(w, "error", nil)
 		return
 	}
