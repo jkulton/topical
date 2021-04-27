@@ -3,13 +3,14 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"io/ioutil"
+	"strings"
+	"testing"
+
 	"github.com/jkulton/topical/internal/models"
 	_ "github.com/lib/pq" // Postgres driver
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"io/ioutil"
-	"strings"
-	"testing"
 )
 
 var db *sql.DB
@@ -24,7 +25,7 @@ type TestHelper struct {
 func testSetup() (th TestHelper) {
 	th.Context = context.Background()
 	th.DBContainer, _ = createPostgresContainer(th.Context)
-	th.DB, _ = createTestDB(th.DBContainer, th.Context)
+	th.DB, _ = createTestDB(th.Context, th.DBContainer)
 	return th
 }
 
@@ -53,7 +54,7 @@ func createPostgresContainer(ctx context.Context) (testcontainers.Container, err
 	return dbContainer, err
 }
 
-func createTestDB(dbContainer testcontainers.Container, ctx context.Context) (*sql.DB, error) {
+func createTestDB(ctx context.Context, dbContainer testcontainers.Container) (*sql.DB, error) {
 	endpoint, _ := dbContainer.Endpoint(ctx, "")
 	endpoint = "postgresql://test:test@" + endpoint + "?sslmode=disable"
 	db, err := sql.Open("postgres", endpoint)
