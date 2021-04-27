@@ -7,12 +7,14 @@ import (
 	"strconv"
 )
 
+// AppConfig specifies high level configuration settings for the app
 type AppConfig struct {
 	Port            int
 	DBConnectionURI string
 	SessionKey      string
 }
 
+// ParseAppConfig parses flags and/or env vars returning an AppConfig instance
 func ParseAppConfig() AppConfig {
 	log.Print("\n\n  _______          _           _ \n" +
 		" |__   __|        (_)         | |\n" +

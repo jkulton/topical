@@ -3,11 +3,12 @@ package storage
 import (
 	"bytes"
 	"database/sql"
+	"log"
+	"time"
+
 	"github.com/jkulton/topical/internal/models"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
-	"log"
-	"time"
 )
 
 // Storage is an interface for interacting with a storage layer
@@ -15,6 +16,7 @@ type Storage struct {
 	db *sql.DB
 }
 
+// TopicalStore implements an CRUD action interface for topics/messages
 type TopicalStore interface {
 	GetTopic(id int) (*models.Topic, error)
 	GetRecentTopics() ([]models.Topic, error)
@@ -28,7 +30,7 @@ func New(db *sql.DB) *Storage {
 }
 
 // GetTopic retrieves a topic from DB by topic
-func (t *Storage) GetTopic(id int) (*models.Topic, error) {
+func (s *Storage) GetTopic(id int) (*models.Topic, error) {
 	topic := models.Topic{}
 	messages := []models.Message{}
 	query := `
@@ -38,7 +40,7 @@ func (t *Storage) GetTopic(id int) (*models.Topic, error) {
 		WHERE topics.id = $1
 		ORDER BY posted ASC;`
 
-	rows, err := t.db.Query(query, id)
+	rows, err := s.db.Query(query, id)
 
 	if err != nil {
 		log.Fatal(err)
@@ -87,7 +89,7 @@ func (t *Storage) GetTopic(id int) (*models.Topic, error) {
 }
 
 // GetRecentTopics returns a list of the 50 most recently posted-on topics
-func (t *Storage) GetRecentTopics() ([]models.Topic, error) {
+func (s *Storage) GetRecentTopics() ([]models.Topic, error) {
 	topics := []models.Topic{}
 	query := `
 		SELECT DISTINCT topics.id, topics.title,
@@ -100,7 +102,7 @@ func (t *Storage) GetRecentTopics() ([]models.Topic, error) {
 		ON topics.id = messages.topic_id
 		ORDER BY last_message DESC
 		LIMIT 50;`
-	rows, err := t.db.Query(query)
+	rows, err := s.db.Query(query)
 
 	if err != nil {
 		log.Fatal(err)
@@ -136,9 +138,9 @@ func (t *Storage) GetRecentTopics() ([]models.Topic, error) {
 }
 
 // CreateMessage inserts a message into the DB
-func (t *Storage) CreateMessage(m *models.Message) (*models.Message, error) {
+func (s *Storage) CreateMessage(m *models.Message) (*models.Message, error) {
 	sql := `INSERT INTO messages (topic_id, content, author_initials, author_theme) VALUES ($1, $2, $3, $4)`
-	_, err := t.db.Exec(sql, *m.TopicID, m.Content, m.AuthorInitials, m.AuthorTheme)
+	_, err := s.db.Exec(sql, *m.TopicID, m.Content, m.AuthorInitials, m.AuthorTheme)
 
 	if err != nil {
 		log.Print(err.Error())

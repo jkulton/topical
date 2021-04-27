@@ -3,12 +3,14 @@ package session
 import (
 	"encoding/json"
 	"errors"
-	"github.com/gorilla/sessions"
-	"github.com/jkulton/topical/internal/models"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/sessions"
+	"github.com/jkulton/topical/internal/models"
 )
 
+// TopicalSession implements methods necessary to save and retrieve users/flash messages
 type TopicalSession interface {
 	GetUser(r *http.Request) (*models.User, error)
 	SaveUser(u *models.User, r *http.Request, w http.ResponseWriter) error
@@ -22,6 +24,7 @@ type Session struct {
 	session *sessions.CookieStore
 }
 
+// NewSession returns a new session instance, based on a provided key
 func NewSession(sessionKey string) *Session {
 	s := sessions.NewCookieStore([]byte(sessionKey))
 	return &Session{s}

@@ -1,13 +1,14 @@
 package api
 
 import (
+	"html/template"
+
 	"github.com/gorilla/mux"
 	"github.com/jkulton/topical/internal/session"
 	"github.com/jkulton/topical/internal/storage"
-	"html/template"
 )
 
-// TopicalAPI provides represents an API instance, with internal state for
+// TopicalAPI represents an API instance, with internal state for
 // templates, storage, and session used by handlers.
 type TopicalAPI struct {
 	templates *template.Template
@@ -15,6 +16,7 @@ type TopicalAPI struct {
 	session   session.TopicalSession
 }
 
+// New returns a new TopicalAPI instance
 func New(templates *template.Template, storage storage.TopicalStore, session session.TopicalSession) *TopicalAPI {
 	return &TopicalAPI{templates, storage, session}
 }
