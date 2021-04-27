@@ -2,6 +2,8 @@
 
 # Topical
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/jkulton/topical)](https://goreportcard.com/report/github.com/jkulton/topical)
+
 [Live Demo](https://topical-go.herokuapp.com/) (demo app DB resets daily)
 
 Topical is a (very) minimalist message board built with Golang.
