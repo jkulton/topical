@@ -2,14 +2,15 @@ package main
 
 import (
 	"database/sql"
-	"github.com/jkulton/topical/internal/config"
-	_ "github.com/lib/pq" // Postgres driver
 	"log"
+
+	"github.com/jkulton/topical/internal/config"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
 	ac := config.ParseAppConfig()
-	db, err := sql.Open("postgres", ac.DBConnectionURI)
+	db, err := sql.Open("sqlite3", ac.DBFile)
 
 	if err != nil {
 		log.Fatal(err)
@@ -17,16 +18,13 @@ func main() {
 
 	defer db.Close()
 
-	_, err = db.Exec(`DROP TABLE messages`)
-
+	_, err = db.Exec(`DROP TABLE IF EXISTS messages`)
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = db.Exec(`DROP TABLE topics`)
-
+	_, err = db.Exec(`DROP TABLE IF EXISTS topics`)
 	if err != nil {
 		panic(err)
 	}
-
 }

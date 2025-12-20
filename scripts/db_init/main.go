@@ -2,20 +2,20 @@ package main
 
 import (
 	"database/sql"
-	"github.com/jkulton/topical/internal/config"
-	_ "github.com/lib/pq" // Postgres driver
 	"io/ioutil"
 	"log"
+
+	"github.com/jkulton/topical/internal/config"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
 	ac := config.ParseAppConfig()
-	db, err := sql.Open("postgres", ac.DBConnectionURI)
 
+	db, err := sql.Open("sqlite3", ac.DBFile)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer db.Close()
 
 	content, err := ioutil.ReadFile("./schema.sql")
@@ -24,11 +24,9 @@ func main() {
 	}
 
 	schema := string(content)
-
 	_, err = db.Exec(schema)
 
 	if err != nil {
 		log.Fatal(err)
 	}
-
 }

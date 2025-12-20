@@ -1,4 +1,4 @@
 *.out
 .DS_Store
-postgres-data/*
-postgres-data/
+topical
+*.db
