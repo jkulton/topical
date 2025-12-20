@@ -1,13 +1,16 @@
+PRAGMA foreign_keys = ON;
+
 CREATE TABLE IF NOT EXISTS topics (
-  id serial PRIMARY KEY,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   title text NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS messages (
-  id serial PRIMARY KEY,
-  topic_id integer REFERENCES topics (id) NOT NULL,
-  content text NOT NULL,
-  author_initials char(2) NOT NULL CHECK (author_initials ~ '^[A-Z]{2}$'),
-  author_theme integer NOT NULL,
-  posted timestamp NOT NULL DEFAULT NOW()
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  topic_id INTEGER NOT NULL REFERENCES topics(id),
+  content TEXT NOT NULL,
+  author_initials CHAR(2) NOT NULL
+    CHECK (author_initials GLOB '[A-Z][A-Z]'),
+  author_theme INTEGER NOT NULL,
+  posted DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

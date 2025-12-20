@@ -9,9 +9,9 @@ import (
 
 // AppConfig specifies high level configuration settings for the app
 type AppConfig struct {
-	Port            int
-	DBConnectionURI string
-	SessionKey      string
+	Port       int
+	DBFile     string
+	SessionKey string
 }
 
 // ParseAppConfig parses flags and/or env vars returning an AppConfig instance
@@ -26,12 +26,12 @@ func ParseAppConfig() AppConfig {
 		"            |_|\n\n")
 
 	port := flag.Int("p", envOrInt("PORT", 8000), "port for app on run on")
-	dbConnectionURI := flag.String("database-url", envOrString("DATABASE_URL", "not-set"), "URI-formatted Postgres connection information (e.g. postgresql://localhost:5433...)")
+	dbFile := flag.String("db-file", envOrString("DB_FILE", "topical.db"), "path to sqlite db file")
 	sessionKey := flag.String("session-key", envOrString("SESSION_KEY", "not-set"), "session key for cookie store")
 
 	flag.Parse()
 
-	return AppConfig{*port, *dbConnectionURI, *sessionKey}
+	return AppConfig{*port, *dbFile, *sessionKey}
 }
 
 func envOrString(key string, defaultVal string) string {

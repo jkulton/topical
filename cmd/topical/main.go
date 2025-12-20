@@ -3,6 +3,9 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/jkulton/topical/internal/api"
 	"github.com/jkulton/topical/internal/config"
@@ -10,9 +13,7 @@ import (
 	"github.com/jkulton/topical/internal/session"
 	"github.com/jkulton/topical/internal/storage"
 	"github.com/jkulton/topical/internal/templates"
-	_ "github.com/lib/pq" // Postgres driver
-	"log"
-	"net/http"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 	ac := config.ParseAppConfig()
 
 	// DB Setup
-	db, err := sql.Open("postgres", ac.DBConnectionURI)
+	db, err := sql.Open("sqlite3", ac.DBFile)
 	if err != nil {
 		log.Fatal(err)
 	}
