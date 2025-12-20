@@ -2,8 +2,8 @@ package main
 
 import (
 	"database/sql"
-	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/jkulton/topical/internal/config"
 	_ "github.com/mattn/go-sqlite3"
@@ -30,7 +30,7 @@ func main() {
 	}
 
 	// Create Tables
-	content, err := ioutil.ReadFile("./schema.sql")
+	content, err := os.ReadFile("./schema.sql")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func main() {
 	}
 
 	// Seed Tables
-	content, err = ioutil.ReadFile("./seeds.sql")
+	content, err = os.ReadFile("./seeds.sql")
 	if err != nil {
 		log.Fatal(err)
 	}

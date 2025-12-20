@@ -2,8 +2,8 @@ package main
 
 import (
 	"database/sql"
-	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/jkulton/topical/internal/config"
 	_ "github.com/mattn/go-sqlite3"
@@ -18,7 +18,7 @@ func main() {
 	}
 	defer db.Close()
 
-	content, err := ioutil.ReadFile("./seeds.sql")
+	content, err := os.ReadFile("./seeds.sql")
 	if err != nil {
 		log.Fatal(err)
 	}
